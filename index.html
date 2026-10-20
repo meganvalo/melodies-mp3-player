@@ -147,6 +147,8 @@ function dbAdd(rec){return new Promise(function(res){
   try{var q=db.transaction("files","readwrite").objectStore("files").add(rec);
   q.onsuccess=function(){res(q.result)};q.onerror=function(){res(null)};}catch(e){res(null)}});}
 function dbDel(id){try{if(db)db.transaction("files","readwrite").objectStore("files").delete(id)}catch(e){}}
+function dbRename(id,name){try{if(!db)return;var s=db.transaction("files","readwrite").objectStore("files"),g=s.get(id);
+  g.onsuccess=function(){var r=g.result;if(r){r.name=name;s.put(r)}}}catch(e){}}
 
 function btn(c,t){var b=document.createElement("button");if(c)b.className=c;b.textContent=t;return b}
 function nm(id){return byId[id]?byId[id].name:""}
@@ -173,9 +175,14 @@ function menu(id){
       var o=S.lists.map(function(p){return{l:p.name,f:function(){addTo(p,id)}}});
       o.push({l:"New playlist…",f:function(){var p=newList();if(p)addTo(p,id)}});
       sheet("Add to playlist",o)}}];
+  it.push({l:"Rename",f:function(){renameTrack(id)}});
   if(tab==="pl"&&openPl)it.push({l:"Remove from this playlist",f:function(){var p=plById(openPl);p.ids.splice(p.ids.indexOf(id),1);save();render()}});
   it.push({l:"Remove from library",f:function(){if(confirm("Remove “"+nm(id)+"” from your library?"))removeTrack(id)}});
   sheet(nm(id),it);
+}
+function renameTrack(id){
+  var n=prompt("Song name",nm(id));if(n===null)return;n=n.trim();if(!n)return;
+  byId[id].name=n;dbRename(id,n);if(cur===id)meta();render();toast("Renamed");
 }
 function plMenu(p){
   sheet(p.name,[
