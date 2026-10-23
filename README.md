@@ -10,7 +10,7 @@ It's a single web page, so there's nothing to download from an app store.
 - **Library, Favorites, Playlists, and Queue** tabs
 - **Search** your songs by name
 - **Favorites:** tap the heart on any song
-- **Playlists:** create, rename, and delete them; add songs from a song's ⋯ menu
+- **Playlists:** create, rename, and delete them; add songs from inside a playlist (**+ Add songs to this playlist**) or from any song's ⋯ menu
 - **Play next and Add to queue:** build a queue on the fly
 - **Drag to reorder** songs in the Library, a playlist, or the Queue (grab the ≡ handle)
 - **Rename songs:** fix a song's displayed name from its ⋯ menu
@@ -19,8 +19,8 @@ It's a single web page, so there's nothing to download from an app store.
 - **Picks up where you left off:** remembers your last song and position
 - **Remembers your settings:** repeat, shuffle, speed, and theme stick after you close the app
 - **Lock screen controls:** play, pause, next, and previous from the lock screen and Control Center, where your device supports it
-- **Themes:** Dark (default), Cream, Peach, Mint, and Deep Teal, using the Sweet Summer color palette
-- **Opening screen:** a black splash with the "m." logo
+- **Themes:** Dark (default), Cream, Peach, Mint, and Deep Teal, using the Sweet Summer color palette. The opening screen follows your theme too
+- **Opening screen:** a splash with the "m." logo that matches your theme
 
 ## Install it on your device
 
@@ -93,8 +93,10 @@ Tap the half-filled circle at the top right and choose a theme. Your choice is r
 ## Updating and troubleshooting
 
 - **The app looks old after an update:** fully close it (swipe it away from the app switcher) and open it again.
-- **Still not updating:** delete the app from your home screen and add it again. Your songs may be kept, but if you're worried, keep your original files handy.
-- **The new launch screen isn't showing:** iPhone saves launch images when an app is added, so delete the app and add it again.
+- **Still not updating:** deleting the app from your home screen and adding it again usually works, but on iPhone it also erases the songs, playlists, and favorites saved inside the app. Only do this as a last resort, and keep your original files handy.
+- **The launch screen looks outdated:** iPhone saves launch images when an app is added, so only a freshly added copy picks up new ones.
+- **Launch screen color:** the brief screen iPhone shows before the app loads is a fixed black image. Once the app loads, the opening splash uses your theme.
+- **Matching the home screen icon to a theme:** an installed app's icon is fixed when it's added, so it can't change by itself. To get a themed icon, open the app's web address in **Safari** (not the home screen app), choose a theme with the button at the top right, then use **Add to Home Screen**. It's a separate copy with its own library, and deleting the old copy erases its saved songs.
 - **A song won't play:** the file may be in a format your browser can't play. Try converting it to MP3.
 - **Music stops at the end of the list:** turn on repeat all (tap the repeat button until you see "Repeat all").
 

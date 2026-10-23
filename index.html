@@ -94,9 +94,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 :root[data-theme="peach"]{--bg:#F5D4C3;--ink:#3C5556;--sub:#526E6B;--soft:#F6EFE7;--line:#E8B9A6;--acc:#3C5556;--on:#F6EFE7;--cap:#3C5556}
 :root[data-theme="mint"]{--bg:#E9F1EF;--ink:#3C5556;--sub:#567370;--soft:#DCE9E5;--line:#C8DBD7;--acc:#D27F6F;--on:#fff;--cap:#3C5556}
 :root[data-theme="teal"]{--bg:#3C5556;--ink:#F6EFE7;--sub:#C8DBD7;--soft:#4A6465;--line:#587374;--acc:#F5D4C3;--on:#3C5556}
-#splash{position:fixed;inset:0;background:#000;display:grid;place-items:center;z-index:99;transition:opacity .5s ease}
+.pick{position:fixed;inset:0;background:var(--bg);z-index:15;display:none;padding:env(safe-area-inset-top,0px) 22px env(safe-area-inset-bottom,0px)}
+.pick.show{display:block}
+.pick .in{max-width:440px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding-top:18px}
+.pick ul{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;line-height:1;color:var(--on);flex:none;margin-right:4px}
+.ck.on{background:var(--acc);border-color:var(--acc)}
+#splash{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:99;transition:opacity .5s ease}
 #splash.hide{opacity:0;pointer-events:none}
-#splash b{font:400 32vw/1 var(--brand);color:#fff;margin-top:-4vw}
+#splash b{font:400 32vw/1 var(--brand);color:var(--ink);margin-top:-4vw}
 </style>
 </head>
 <body>
@@ -125,6 +131,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <button data-t="lib">Library</button><button data-t="fav">Favorites</button><button data-t="pl">Playlists</button><button data-t="q" id="tq">Queue</button>
   </div>
   <button class="add" id="addBtn">Add songs from this phone</button>
+  <button class="add" id="addPl" style="display:none">+ Add songs to this playlist</button>
   <input type="file" id="file" accept="audio/*,.mp3" multiple hidden>
   <input type="search" id="srch" placeholder="Search songs" aria-label="Search songs">
   <div class="bar" id="bar"></div>
@@ -132,6 +139,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <div class="empty" id="empty"></div>
 </main>
 <div class="sheet" id="sheet"><div id="sd"></div></div>
+<div class="pick" id="pick"><div class="in">
+  <div class="bar" style="display:flex"><b id="pt"></b><button class="pill" id="pdone">Done</button></div>
+  <input type="search" id="psrch" placeholder="Search your library" aria-label="Search your library">
+  <ul id="pul"></ul>
+</div></div>
 <div class="toast" id="toast"></div>
 <script>
 (function(){
@@ -231,7 +243,7 @@ function viewIds(){
   var q=$("srch").value.trim().toLowerCase();
   return q?ids.filter(function(i){return nm(i).toLowerCase().indexOf(q)>-1}):ids;
 }
-var EMPTY={lib:"Add some MP3 files to start listening.",fav:"Tap the heart on a song to keep it here.",q:"Nothing queued. Use ⋯ on a song to play it next.",pl:"Create a playlist to group your songs.",plo:"No songs yet. Use ⋯ on a song and choose Add to playlist."};
+var EMPTY={lib:"Add some MP3 files to start listening.",fav:"Tap the heart on a song to keep it here.",q:"Nothing queued. Use ⋯ on a song to play it next.",pl:"Create a playlist to group your songs.",plo:"No songs yet. Tap Add songs above to pick some."};
 
 function render(){
   var ul=$("list");ul.innerHTML="";
@@ -239,6 +251,7 @@ function render(){
   $("tq").textContent="Queue"+(queue.length?" "+queue.length:"");
   var overview=tab==="pl"&&!openPl,searching=$("srch").value.trim()!=="";
   $("addBtn").style.display=tab==="lib"?"block":"none";
+  $("addPl").style.display=(tab==="pl"&&openPl)?"block":"none";
   $("srch").style.display=(tab==="q"||overview)?"none":"block";
   var bar=$("bar");bar.innerHTML="";bar.style.display="none";
   var n=0;
@@ -382,6 +395,22 @@ if("mediaSession" in navigator){
   }catch(e){}
 }
 
+function drawPick(){
+  var p=plById(openPl),ul=$("pul"),q=$("psrch").value.trim().toLowerCase(),n=0;ul.innerHTML="";
+  if(!p)return;
+  S.order.forEach(function(id){
+    if(q&&nm(id).toLowerCase().indexOf(q)<0)return;
+    var li=document.createElement("li"),b=btn("t",nm(id)),c=document.createElement("span");
+    function paint(){var on=p.ids.indexOf(id)>-1;c.className="ck"+(on?" on":"");c.textContent=on?"✓":""}
+    b.onclick=function(){var i=p.ids.indexOf(id);if(i>-1)p.ids.splice(i,1);else p.ids.push(id);save();paint()};
+    paint();li.appendChild(b);li.appendChild(c);ul.appendChild(li);n++;
+  });
+  if(!n){var e=document.createElement("li");e.className="cn";e.style.padding="20px 2px";e.textContent=q?"No matches.":"Your library is empty.";ul.appendChild(e)}
+}
+$("addPl").onclick=function(){var p=plById(openPl);if(!p)return;$("pt").textContent=p.name;$("psrch").value="";$("pick").classList.add("show");drawPick()};
+$("psrch").oninput=drawPick;
+$("pdone").onclick=function(){$("pick").classList.remove("show");render()};
+
 // drag to reorder (Library, Queue, open playlist)
 $("list").onpointerdown=function(e){
   var h=e.target.closest&&e.target.closest(".h");if(!h)return;
@@ -413,11 +442,12 @@ openDB().then(dbAll).then(function(rows){
   }
   render();
 });
-var TH=[{k:"dark",n:"Dark",c:"#0A0A0B"},{k:"cream",n:"Cream",c:"#F6EFE7"},{k:"peach",n:"Peach",c:"#F5D4C3"},{k:"mint",n:"Mint",c:"#E9F1EF"},{k:"teal",n:"Deep Teal",c:"#3C5556"}];
+var TH=[{k:"dark",n:"Dark",c:"#0A0A0B",i:"icon-180.png"},{k:"cream",n:"Cream",c:"#F6EFE7",i:"icon-cream.png"},{k:"peach",n:"Peach",c:"#F5D4C3",i:"icon-peach.png"},{k:"mint",n:"Mint",c:"#E9F1EF",i:"icon-mint.png"},{k:"teal",n:"Deep Teal",c:"#3C5556",i:"icon-teal.png"}];
 function applyTheme(k){
   var t=TH.filter(function(x){return x.k===k})[0]||TH[0];
   document.documentElement.dataset.theme=t.k;
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.c);
+  ["apple-touch-icon","icon"].forEach(function(r){var l=document.querySelector('link[rel="'+r+'"]');if(l)l.setAttribute("href",t.i)});
 }
 $("thm").innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>';
 $("thm").onclick=function(){
