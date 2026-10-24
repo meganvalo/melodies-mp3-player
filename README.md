@@ -21,6 +21,10 @@ It's a single web page, so there's nothing to download from an app store.
 - **Lock screen controls:** play, pause, next, and previous from the lock screen and Control Center, where your device supports it
 - **Themes:** Dark (default), Cream, Peach, Mint, and Deep Teal, using the Sweet Summer color palette. The opening screen follows your theme too
 - **Opening screen:** a splash with the "m." logo that matches your theme
+- **Settings:** themes, resume and auto-continue toggles, library size, and storage protection
+- **Backup and restore:** save everything (songs, playlists, favorites, settings) as one .zip file and restore it later
+- **Import and export playlists:** move playlists and favorites between devices as a small file
+- **Share a song:** send or save a song's file from its ⋯ menu
 
 ## Install it on your device
 
@@ -78,14 +82,34 @@ Tap the ⋯ next to any song for:
 
 Renaming only changes the name shown in melodies. Your original files are never touched. Removing a song deletes only the copy stored inside the app.
 
-### Changing the theme
+### Settings
 
-Tap the half-filled circle at the top right and choose a theme. Your choice is remembered.
+Tap the sliders icon at the top right. From there you can:
+
+- Pick a **theme**. Your choice is remembered.
+- Turn **Resume where I left off** and **Continue into Library when a list ends** on or off.
+- See how many songs you have and how much space they use.
+- Ask the browser to **protect your library** from being cleared when the device is low on space (support varies by browser).
+- Back up, restore, import, export, or delete your library (see below).
+
+### Backup, restore, import, and export
+
+**Back up everything.** Settings → **Back up everything** builds one `.zip` file with your songs, playlists, favorites, and settings. When it's ready, tap **Save or share file** and save it to Files, iCloud Drive, or send it to another device. You can also open the zip on a computer to get your MP3s.
+
+**Restore from backup.** Settings → **Restore from backup** and pick a backup file. Restoring **replaces** what's in the app right now, and you'll be asked to confirm. If the file can't be read, your current library is left untouched.
+
+**Export playlists & favorites.** Saves just your playlists and favorites as a small file (no audio).
+
+**Import playlists & favorites.** Reads one of those files and adds its playlists and favorites to what you already have. Songs are matched by name, so add the songs to the device first. Anything that doesn't match is skipped and reported.
+
+**Share a single song.** Tap ⋯ next to a song and choose **Share or save file**.
+
+Large libraries make large backups. Building one can take a while, and very big files may not share well from a phone.
 
 ## Good to know
 
-- **Your library is stored on each device separately.** Songs, favorites, playlists, and your queue don't sync between devices. If you use melodies. on two devices, you'll need to add your songs to each one.
-- **The data lives in your browser's storage.** Clearing website data for the site, or deleting and reinstalling the app on some devices, can erase your library. Keep your original MP3s somewhere safe.
+- **Your library is stored on each device separately.** Songs, favorites, playlists, and your queue don't sync between devices. If you use melodies. on two devices, you'll need to add your songs to each one, or move everything over with a backup and restore.
+- **The data lives in your browser's storage.** Clearing website data for the site, or deleting and reinstalling the app on some devices, can erase your library. Keep your original MP3s somewhere safe, and make a backup from Settings now and then.
 - **It works offline.** After the first visit, the app opens without an internet connection, and your saved songs play offline.
 - **Background playback can vary.** Music keeps playing when you lock your phone, but how reliably it behaves depends on your device and browser. iPhone is the most-tested setup.
 - **Which files work:** the app plays any audio format your browser can play. MP3 is the safest choice.
@@ -93,10 +117,10 @@ Tap the half-filled circle at the top right and choose a theme. Your choice is r
 ## Updating and troubleshooting
 
 - **The app looks old after an update:** fully close it (swipe it away from the app switcher) and open it again.
-- **Still not updating:** deleting the app from your home screen and adding it again usually works, but on iPhone it also erases the songs, playlists, and favorites saved inside the app. Only do this as a last resort, and keep your original files handy.
+- **Still not updating:** deleting the app from your home screen and adding it again usually works, but on iPhone it also erases the songs, playlists, and favorites saved inside the app. Make a backup in Settings first, and only do this as a last resort.
 - **The launch screen looks outdated:** iPhone saves launch images when an app is added, so only a freshly added copy picks up new ones.
 - **Launch screen color:** the brief screen iPhone shows before the app loads is a fixed black image. Once the app loads, the opening splash uses your theme.
-- **Matching the home screen icon to a theme:** an installed app's icon is fixed when it's added, so it can't change by itself. To get a themed icon, open the app's web address in **Safari** (not the home screen app), choose a theme with the button at the top right, then use **Add to Home Screen**. It's a separate copy with its own library, and deleting the old copy erases its saved songs.
+- **Matching the home screen icon to a theme:** an installed app's icon is fixed when it's added, so it can't change by itself. To get a themed icon, open the app's web address in **Safari** (not the home screen app), choose a theme with the button at the top right, then use **Add to Home Screen**. It's a separate copy with its own library, and deleting the old copy erases its saved songs, so back up first and restore into the new copy.
 - **A song won't play:** the file may be in a format your browser can't play. Try converting it to MP3.
 - **Music stops at the end of the list:** turn on repeat all (tap the repeat button until you see "Repeat all").
 
@@ -106,7 +130,7 @@ There's no build step or server. The app is a few static files:
 
 | File | What it does |
 | --- | --- |
-| `index.html` | The whole app: layout, styling, and logic |
+| `index.html` | The whole app: layout, styling, logic, and embedded font |
 | `sw.js` | Service worker that makes the app work offline |
 | `manifest.webmanifest` | Lets the app be installed with a name and icon |
 | `icon-*.png` | App icons |
