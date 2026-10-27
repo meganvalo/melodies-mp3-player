@@ -590,6 +590,13 @@ function drawSettings(){
     var r=srow(t.n,(S.theme||"dark")===t.k?"✓":"",function(){S.theme=t.k;save();applyTheme(t.k);drawSettings()});
     r.firstChild.insertBefore(d,r.firstChild.firstChild);b.appendChild(r);
   });
+  h("App icon");
+  TH.forEach(function(t){
+    var im=document.createElement("img");im.src=t.i;im.alt="";im.style.cssText="width:36px;height:36px;border-radius:8px;margin-right:12px;vertical-align:middle;border:1px solid var(--line)";
+    var r=srow(t.n,"Copy link",function(){copyIcon(t)});
+    r.firstChild.insertBefore(im,r.firstChild.firstChild);b.appendChild(r);
+  });
+  hint("iPhone only reads an app's icon at the moment it's added to the Home Screen, so an installed icon can't change. To switch: make a backup, tap an icon above to copy its link, open that link in Safari, tap Share → Add to Home Screen, then restore your backup in the new copy and delete the old one.");
   h("Playback");
   b.appendChild(srow("Resume where I left off",sw(S.resume!==false),function(){S.resume=(S.resume===false);save();drawSettings()}));
   b.appendChild(srow("Continue into Library when a list ends",sw(S.carry!==false),function(){S.carry=(S.carry===false);save();drawSettings()}));
@@ -602,9 +609,9 @@ function drawSettings(){
   b.appendChild(pe);
   try{navigator.storage.persisted().then(function(p){pe.lastChild.textContent=p?"On":"Off"})}catch(e){pe.lastChild.textContent="n/a"}
   h("Backup & restore");
-  b.appendChild(srow("Back up everything",null,backup));
+  b.appendChild(srow("Back up everything",S.order.length?"≈ "+fsize(bytes):null,backup));
   b.appendChild(srow("Restore from backup",null,function(){$("rfile").click()}));
-  hint("A backup is one .zip file with your songs, playlists, favorites, and settings. You can also open it on a computer to get your MP3s. Restoring replaces what's currently in the app.");
+  hint("A backup is one .zip file that includes the music itself plus your playlists, favorites, and settings, with no size limit set by the app. You can also open it on a computer to get your MP3s. Restoring replaces what's currently in the app.");
   h("Import & export");
   b.appendChild(srow("Export playlists & favorites",null,exportLists));
   b.appendChild(srow("Import playlists & favorites",null,function(){$("ifile").click()}));
@@ -612,6 +619,11 @@ function drawSettings(){
   h("Danger zone");
   b.appendChild(srow("Delete all songs & playlists",null,wipeAll,"dg"));
   b.scrollTop=y;
+}
+function copyIcon(t){
+  var u=location.origin+location.pathname+"?icon="+t.k;
+  function done(){msg("Link copied for the "+t.n+" icon. Open it in Safari, then tap Share → Add to Home Screen.")}
+  try{navigator.clipboard.writeText(u).then(done,function(){prompt("Copy this link",u)})}catch(e){prompt("Copy this link",u)}
 }
 function openSettings(){$("set").classList.add("show");msg("");drawSettings()}
 $("sdone").onclick=function(){$("set").classList.remove("show")};
@@ -647,14 +659,16 @@ openDB().then(dbAll).then(function(rows){
   render();
 });
 var TH=[{k:"dark",n:"Dark",c:"#0A0A0B",i:"icon-180.png"},{k:"cream",n:"Cream",c:"#F6EFE7",i:"icon-cream.png"},{k:"peach",n:"Peach",c:"#F5D4C3",i:"icon-peach.png"},{k:"mint",n:"Mint",c:"#E9F1EF",i:"icon-mint.png"},{k:"teal",n:"Deep Teal",c:"#3C5556",i:"icon-teal.png"}];
+function iconFile(k){var t=TH.filter(function(x){return x.k===k})[0];return t?t.i:null}
 function applyTheme(k){
-  var t=TH.filter(function(x){return x.k===k})[0]||TH[0];
+  var t=TH.filter(function(x){return x.k===k})[0]||TH[0],f=iconFile(S.icon)||t.i;
   document.documentElement.dataset.theme=t.k;
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.c);
-  ["apple-touch-icon","icon"].forEach(function(r){var l=document.querySelector('link[rel="'+r+'"]');if(l)l.setAttribute("href",t.i)});
+  ["apple-touch-icon","icon"].forEach(function(r){var l=document.querySelector('link[rel="'+r+'"]');if(l)l.setAttribute("href",f)});
 }
 $("thm").innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>';
 $("thm").onclick=openSettings;
+try{var qi=new URLSearchParams(location.search).get("icon");if(qi&&iconFile(qi)){S.icon=qi;save()}}catch(e){}
 applyTheme(S.theme||"dark");
 setTimeout(function(){var s=$("splash");s.classList.add("hide");setTimeout(function(){s.remove()},600)},1100);
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}

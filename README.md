@@ -87,6 +87,7 @@ Renaming only changes the name shown in melodies. Your original files are never 
 Tap the sliders icon at the top right. From there you can:
 
 - Pick a **theme**. Your choice is remembered.
+- Choose an **app icon** (see below).
 - Turn **Resume where I left off** and **Continue into Library when a list ends** on or off.
 - See how many songs you have and how much space they use.
 - Ask the browser to **protect your library** from being cleared when the device is low on space (support varies by browser).
@@ -94,7 +95,7 @@ Tap the sliders icon at the top right. From there you can:
 
 ### Backup, restore, import, and export
 
-**Back up everything.** Settings → **Back up everything** builds one `.zip` file with your songs, playlists, favorites, and settings. When it's ready, tap **Save or share file** and save it to Files, iCloud Drive, or send it to another device. You can also open the zip on a computer to get your MP3s.
+**Back up everything.** Settings → **Back up everything** builds one `.zip` file that includes the music itself, plus your playlists, favorites, and settings. The app doesn't set a size limit, and Settings shows the estimated size next to the button. When it's ready, tap **Save or share file** and save it to Files, iCloud Drive, or send it to another device. You can also open the zip on a computer to get your MP3s.
 
 **Restore from backup.** Settings → **Restore from backup** and pick a backup file. Restoring **replaces** what's in the app right now, and you'll be asked to confirm. If the file can't be read, your current library is left untouched.
 
@@ -102,9 +103,22 @@ Tap the sliders icon at the top right. From there you can:
 
 **Import playlists & favorites.** Reads one of those files and adds its playlists and favorites to what you already have. Songs are matched by name, so add the songs to the device first. Anything that doesn't match is skipped and reported.
 
+### Changing the app icon
+
+Settings → **App icon** lists the five icons (Dark, Cream, Peach, Mint, Deep Teal). iPhone only reads an app's icon at the moment it's added to the Home Screen, so an installed app's icon can't be changed in place. To switch:
+
+1. Make a backup (Settings → **Back up everything**) and save the file.
+2. Tap the icon you want under **App icon** to copy its link.
+3. Paste the link into **Safari** and open it.
+4. Tap **Share → Add to Home Screen**.
+5. Open the new copy, go to Settings → **Restore from backup**, and pick your backup file.
+6. Delete the old copy. Deleting it erases the songs stored in that copy, which is why you back up first.
+
+The new copy has its own separate library, which is why the restore step is needed.
+
 **Share a single song.** Tap ⋯ next to a song and choose **Share or save file**.
 
-Large libraries make large backups. Building one can take a while, and very big files may not share well from a phone.
+Large libraries make large backups. Building one can take a while, and how well very big files share from a phone depends on iOS.
 
 ## Good to know
 
@@ -120,7 +134,7 @@ Large libraries make large backups. Building one can take a while, and very big 
 - **Still not updating:** deleting the app from your home screen and adding it again usually works, but on iPhone it also erases the songs, playlists, and favorites saved inside the app. Make a backup in Settings first, and only do this as a last resort.
 - **The launch screen looks outdated:** iPhone saves launch images when an app is added, so only a freshly added copy picks up new ones.
 - **Launch screen color:** the brief screen iPhone shows before the app loads is a fixed black image. Once the app loads, the opening splash uses your theme.
-- **Matching the home screen icon to a theme:** an installed app's icon is fixed when it's added, so it can't change by itself. To get a themed icon, open the app's web address in **Safari** (not the home screen app), choose a theme with the button at the top right, then use **Add to Home Screen**. It's a separate copy with its own library, and deleting the old copy erases its saved songs, so back up first and restore into the new copy.
+- **Changing the app icon:** see "Changing the app icon" above.
 - **A song won't play:** the file may be in a format your browser can't play. Try converting it to MP3.
 - **Music stops at the end of the list:** turn on repeat all (tap the repeat button until you see "Repeat all").
 
