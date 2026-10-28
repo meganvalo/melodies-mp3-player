@@ -25,6 +25,10 @@ It's a single web page, so there's nothing to download from an app store.
 - **Backup and restore:** save everything (songs, playlists, favorites, settings) as one .zip file and restore it later
 - **Import and export playlists:** move playlists and favorites between devices as a small file
 - **Share a song:** send or save a song's file from its ⋯ menu
+- **Select several songs** to add them to a playlist, favorite them, queue them, or delete them in one go
+- **Duplicate warning:** you're told before adding songs that are already in your library
+- **Trim silence:** cut silence from the start or end of a song during playback, with auto-detect
+- **Auto dark mode:** switch to a night theme with your phone's appearance or on a schedule
 
 ## Install it on your device
 
@@ -82,11 +86,36 @@ Tap the ⋯ next to any song for:
 
 Renaming only changes the name shown in melodies. Your original files are never touched. Removing a song deletes only the copy stored inside the app.
 
+### Duplicates
+
+If you pick songs that are already in your library (same file name or name and size), melodies. tells you and lets you **skip duplicates**, **add everything anyway**, or cancel.
+
+### Selecting several songs
+
+In the Library, Favorites, or inside a playlist, tap **Select** next to the search box. Tap songs to check them (or **All**), then use the bar at the bottom:
+
+- **Playlist:** add them to a playlist (or a new one)
+- **Favorite / Unfavorite**
+- **Queue:** play them next or add them to the end of the queue
+- **Delete** (from the Library) or **Remove** (from a playlist)
+
+Tap **Done** to leave select mode.
+
+### Trimming silence
+
+Tap ⋯ next to a song and choose **Trim silence…**.
+
+- **Auto-detect silence** finds quiet stretches at the start and end for you (it can't analyze very large files, over about 60 MB).
+- Use the **−1, −.1, +.1, +1** buttons to fine-tune how much to cut from the start and the end.
+- **Hear start** and **Hear end** let you check the cut before you save.
+- **Save trim** applies it. Trims only affect playback, so your original file is never changed. They're included in your backups. To undo, open **Edit trim…** and choose **Reset**.
+
 ### Settings
 
 Tap the sliders icon at the top right. From there you can:
 
 - Pick a **theme**. Your choice is remembered.
+- Turn on **Auto dark mode** to switch to a night theme (Dark or Deep Teal) either with your phone's appearance setting or between times you choose.
 - Choose an **app icon** (see below).
 - Turn **Resume where I left off** and **Continue into Library when a list ends** on or off.
 - See how many songs you have and how much space they use.
