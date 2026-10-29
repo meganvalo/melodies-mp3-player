@@ -146,6 +146,25 @@ li .t .ar{font-size:13px;font-weight:400;color:var(--sub);margin-top:2px}
 .mini .ic{width:44px;height:44px}
 .hasmini main{padding-bottom:110px}
 body.selmode .mini{display:none}
+.row2{gap:8px}
+.row2 .pill{min-width:52px;padding:10px 12px}
+.fld{width:100%;padding:12px 14px;margin:4px 0 14px;border-radius:12px;border:0;background:var(--soft);color:var(--ink);font:inherit;font-size:16px;-webkit-user-select:text;user-select:text}
+.lb{display:block;font-size:12px;color:var(--sub);margin-top:6px}
+.th.big{width:96px;height:96px;font-size:36px;border-radius:12px}
+.irow{display:flex;gap:14px;align-items:center;margin:8px 0 14px}
+.icol{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.ut{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;align-items:center;gap:12px;background:var(--ink);color:var(--bg);padding:8px 8px 8px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:31;max-width:92vw}
+.ut.show{display:flex}
+.ut span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut button{background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:700;flex:none}
+@media (min-width:820px){
+  main{max-width:1120px;display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:56px;align-items:start;padding:24px 32px 60px}
+  .dial{width:min(100%,340px)}
+  .pane-r{min-width:0}
+}
+@media (min-width:820px) and (min-height:640px){
+  .pane-l{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+}
 #splash{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:99;transition:opacity .5s ease}
 #splash.hide{opacity:0;pointer-events:none}
 #splash b{font:400 32vw/1 var(--brand);color:var(--ink);margin-top:-4vw}
@@ -154,6 +173,7 @@ body.selmode .mini{display:none}
 <body>
 <div id="splash"><b>m.</b></div>
 <main id="app">
+  <div class="pane-l">
   <div class="top"><div class="brand">melodies.</div><button class="ic s" id="thm" aria-label="Settings"></button></div>
   <div class="dial">
     <svg viewBox="0 0 200 200"><circle class="track" cx="100" cy="100" r="92"/><circle class="prog" id="prog" cx="100" cy="100" r="92"/></svg>
@@ -170,9 +190,14 @@ body.selmode .mini{display:none}
     <button class="ic s" id="rep" aria-label="Repeat"></button>
   </div>
   <div class="row2">
+    <button class="pill" id="skb" aria-label="Back 15 seconds">−15</button>
     <button class="pill" id="spd" aria-label="Playback speed">1×</button>
     <button class="ic s" id="fav" aria-label="Favorite"></button>
+    <button class="ic s" id="mkb" aria-label="Bookmarks"></button>
+    <button class="pill" id="skf" aria-label="Forward 15 seconds">+15</button>
   </div>
+  </div>
+  <div class="pane-r">
   <div class="tabs">
     <button data-t="lib">Library</button><button data-t="fav">Favorites</button><button data-t="pl">Playlists</button><button data-t="q" id="tq">Queue</button>
   </div>
@@ -185,12 +210,31 @@ body.selmode .mini{display:none}
   <div class="bar" id="bar"></div>
   <ul id="list"></ul>
   <div class="empty" id="empty"></div>
+  </div>
 </main>
 <div class="sheet" id="sheet"><div id="sd"></div></div>
 <div class="mini" id="mini"><div class="mp" id="mprog"></div>
   <button class="mb" id="mgo" aria-label="Show player"><span class="th" id="mth"></span><span class="mt"><span class="nm" id="mtitle"></span><span class="ar" id="martist"></span></span></button>
   <button class="ic m" id="mpp" aria-label="Play"></button><button class="ic m" id="mnx" aria-label="Next"></button>
 </div>
+<div class="pick" id="info"><div class="in">
+  <div class="bar" style="display:flex"><b>Song info</b><button class="pill" id="inX">Cancel</button></div>
+  <div id="inBody" style="flex:1;overflow:auto;padding-bottom:30px">
+    <div class="irow"><span class="th big" id="inTh"></span><div class="icol"><button class="pill" id="inPick">Choose cover</button><button class="pill" id="inRm">Remove cover</button></div></div>
+    <label class="lb" for="inT">Title</label><input class="fld" id="inT" autocomplete="off">
+    <label class="lb" for="inA">Artist</label><input class="fld" id="inA" autocomplete="off">
+    <label class="lb" for="inB">Album</label><input class="fld" id="inB" autocomplete="off">
+    <button class="add" id="inSave">Save</button>
+    <p class="hint">Edits are stored in the app, not inside the MP3 file, and they're included in your backups.</p>
+  </div>
+</div></div>
+<input type="file" id="artFile" accept="image/*" hidden>
+<div class="pick" id="marks"><div class="in">
+  <div class="bar" style="display:flex"><b id="mkT">Bookmarks</b><button class="pill" id="mkX">Done</button></div>
+  <button class="add" id="mkAdd">+ Add bookmark here</button>
+  <ul id="mkList"></ul><div class="empty" id="mkE">No bookmarks for this song yet.</div>
+</div></div>
+<div class="ut" id="ut" role="status"><span id="utm"></span><button id="utb">Undo</button></div>
 <div class="abar" id="abar"></div>
 <div class="pick" id="trim"><div class="in">
   <div class="bar" style="display:flex"><b id="trT"></b><button class="pill" id="trX">Cancel</button></div>
@@ -220,11 +264,11 @@ shuf:'<svg viewBox="0 0 24 24"><path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18
 rep:'<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h13M17 3l3 3-3 3M20 13v2a3 3 0 0 1-3 3H4M7 21l-3-3 3-3"/></svg>',
 rep1:'<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h13M17 3l3 3-3 3M20 13v2a3 3 0 0 1-3 3H4M7 21l-3-3 3-3"/><text x="12" y="15" font-size="8" text-anchor="middle" fill="currentColor" stroke="none">1</text></svg>',
 heart:'<svg viewBox="0 0 24 24"><path d="M12 20s-8-4.9-9.6-10C1.4 6.700 3.700 4 6.800 4c2 0 3.700 1.100 5.200 3.100C13.500 5.100 15.200 4 17.200 4c3.100 0 5.400 2.700 4.400 6C20 15.100 12 20 12 20z"/></svg>'};
-$("shuf").innerHTML=I.shuf;$("prev").innerHTML=I.prev;$("next").innerHTML=I.next;$("pp").innerHTML=I.play;$("rep").innerHTML=I.rep;$("fav").innerHTML=I.heart;$("mpp").innerHTML=I.play;$("mnx").innerHTML=I.next;
+$("shuf").innerHTML=I.shuf;$("prev").innerHTML=I.prev;$("next").innerHTML=I.next;$("pp").innerHTML=I.play;$("rep").innerHTML=I.rep;$("fav").innerHTML=I.heart;$("mpp").innerHTML=I.play;$("mnx").innerHTML=I.next;$("mkb").innerHTML='<svg viewBox="0 0 24 24"><path d="M6 21V4M6 5h11l-2.5 4L17 13H6"/></svg>';
 
 var S={order:[],favs:[],lists:[],speed:1,last:null};
 try{var raw=localStorage.getItem("melodies-state");if(raw)Object.assign(S,JSON.parse(raw))}catch(e){}
-S.trims=S.trims||{};S.stats=S.stats||{};S.pos=S.pos||{};
+S.trims=S.trims||{};S.stats=S.stats||{};S.pos=S.pos||{};S.marks=S.marks||{};
 function save(){try{localStorage.setItem("melodies-state",JSON.stringify(S))}catch(e){}}
 var SP=[0.75,1,1.25,1.5,2];
 var audio=new Audio();audio.preload="metadata";audio.defaultPlaybackRate=audio.playbackRate=S.speed;
@@ -274,11 +318,12 @@ function menu(id){
       o.push({l:"New playlist…",f:function(){var p=newList();if(p)addTo(p,id)}});
       sheet("Add to playlist",o)}}];
   it.push({l:"Rename",f:function(){renameTrack(id)}});
+  it.push({l:"Edit info…",f:function(){openInfo(id)}});
   it.push({l:S.trims[id]?"Edit trim…":"Trim silence…",f:function(){openTrim(id)}});
   if(S.pos[id])it.push({l:"Play from the beginning",f:function(){delete S.pos[id];save();ctx=viewIds().slice();ctxPos=ctx.indexOf(id);load(id)}});
   it.push({l:"Share or save file",f:function(){var t=byId[id];saveFile(t.blob,safeName(t.name)+"."+ext(t.blob.type))}});
-  if(tab==="pl"&&openPl&&!isSmart())it.push({l:"Remove from this playlist",f:function(){var p=plById(openPl);p.ids.splice(p.ids.indexOf(id),1);save();render()}});
-  it.push({l:"Remove from library",f:function(){if(confirm("Remove “"+nm(id)+"” from your library?"))removeTrack(id)}});
+  if(tab==="pl"&&openPl&&!isSmart())it.push({l:"Remove from this playlist",f:function(){var p=plById(openPl),before=p.ids.slice();p.ids.splice(p.ids.indexOf(id),1);save();render();offerUndo("Removed from playlist",function(){p.ids=before;save();render()})}});
+  it.push({l:"Remove from library",f:function(){removeTracks([id])}});
   sheet(nm(id),it);
 }
 function renameTrack(id){
@@ -289,18 +334,11 @@ function plMenu(p){
   sheet(p.name,[
     {l:"Play",f:function(){playList(p)}},
     {l:"Rename",f:function(){var n=prompt("Playlist name",p.name);if(n&&n.trim()){p.name=n.trim();save();render()}}},
-    {l:"Delete playlist",f:function(){if(confirm("Delete “"+p.name+"”? Your songs stay in the library.")){S.lists.splice(S.lists.indexOf(p),1);if(openPl===p.id)openPl=null;save();render()}}}]);
+    {l:"Delete playlist",f:function(){var ix=S.lists.indexOf(p);S.lists.splice(ix,1);if(openPl===p.id)openPl=null;save();render();offerUndo("Deleted “"+p.name+"”",function(){S.lists.splice(Math.min(ix,S.lists.length),0,p);save();render()})}}]);
 }
 function playList(p){if(!p.ids.length)return toast("This playlist is empty");ctx=p.ids.slice();ctxPos=shuffle?Math.floor(Math.random()*ctx.length):0;load(ctx[ctxPos])}
 
-function removeTrack(id){
-  var t=byId[id];if(!t)return;dbDel(id);if(t.url)URL.revokeObjectURL(t.url);delete byId[id];
-  var f=function(i){return i!==id};delete S.trims[id];delete S.pos[id];delete S.stats[id];
-  S.order=S.order.filter(f);S.favs=S.favs.filter(f);queue=queue.filter(f);ctx=ctx.filter(f);ctxPos=Math.min(ctxPos,ctx.length-1);
-  S.lists.forEach(function(l){l.ids=l.ids.filter(f)});
-  if(cur===id){audio.pause();audio.removeAttribute("src");cur=null;S.last=null;meta()}
-  save();render();
-}
+function removeTrack(id){removeTracks([id])}
 
 function viewIds(){
   var ids;
@@ -356,7 +394,7 @@ function render(){
     if(tab==="q"&&queue.length){
       bar.style.display="flex";
       var qt=document.createElement("b");qt.textContent=queue.length+" up next";
-      var qc=btn("pill","Clear");qc.onclick=function(){queue=[];toast("Queue cleared");render()};
+      var qc=btn("pill","Clear");qc.onclick=function(){var qb=queue.slice();queue=[];render();offerUndo("Queue cleared",function(){queue=qb;render()})};
       var qs=btn("pill","Save as playlist");qs.onclick=saveQueue;
       bar.appendChild(qt);bar.appendChild(qc);bar.appendChild(qs);
     }
@@ -570,7 +608,7 @@ async function thumb(c){
 }
 var scanning=false;
 async function scanTags(force){
-  if(scanning)return;scanning=true;var n=0,k,t,tg,art,ids=S.order.filter(function(id){var x=byId[id];return x&&(force||!x.scanned)});
+  if(scanning)return;scanning=true;var n=0,k,t,tg,art,ids=S.order.filter(function(id){var x=byId[id];return x&&!x.edited&&(force||!x.scanned)});
   try{
     for(k=0;k<ids.length;k++){
       t=byId[ids[k]];if(!t)continue;
@@ -634,6 +672,114 @@ function saveQueue(){
   var n=prompt("Playlist name","Queue "+dstamp());if(!n||!n.trim())return;
   S.lists.push({id:"p"+Date.now(),name:n.trim(),ids:ids});save();toast("Saved “"+n.trim()+"”");
 }
+var uo=null,pendUnused=0;
+function offerUndo(text,undo,expire){
+  closeUndo(true);
+  uo={undo:undo,expire:expire,t:setTimeout(function(){closeUndo(true)},9000)};
+  $("utm").textContent=text;$("ut").classList.add("show");
+}
+function closeUndo(fire){
+  if(!uo)return;var u=uo;uo=null;clearTimeout(u.t);$("ut").classList.remove("show");
+  if(fire&&u.expire)u.expire();
+}
+$("utb").onclick=function(){var u=uo;if(!u)return;uo=null;clearTimeout(u.t);$("ut").classList.remove("show");u.undo()};
+window.addEventListener("pagehide",function(){closeUndo(true)});
+function removeTracks(ids){
+  closeUndo(true);
+  ids=ids.filter(function(i){return byId[i]});if(!ids.length)return;
+  var snap=[],gone={};
+  ids.forEach(function(id){
+    var t=byId[id];gone[id]=1;
+    snap.push({t:t,i:S.order.indexOf(id),fav:isFav(id),st:S.stats[id],pos:S.pos[id],trim:S.trims[id],marks:S.marks[id],
+      lists:S.lists.map(function(l){return{id:l.id,j:l.ids.indexOf(id)}}).filter(function(x){return x.j>-1})});
+    dbPatch(id,{deleted:true});
+  });
+  var f=function(i){return !gone[i]};
+  S.order=S.order.filter(f);S.favs=S.favs.filter(f);queue=queue.filter(f);ctx=ctx.filter(f);ctxPos=Math.min(ctxPos,ctx.length-1);
+  S.lists.forEach(function(l){l.ids=l.ids.filter(f)});
+  ids.forEach(function(id){delete byId[id];delete S.trims[id];delete S.pos[id];delete S.stats[id];delete S.marks[id]});
+  if(cur!=null&&gone[cur]){audio.pause();audio.removeAttribute("src");cur=null;S.last=null;meta()}
+  save();render();
+  offerUndo(ids.length===1?"Removed “"+snap[0].t.name+"”":"Removed "+ids.length+" songs",function(){
+    snap.sort(function(a,b){return a.i-b.i}).forEach(function(x){
+      var id=x.t.id;byId[id]=x.t;
+      S.order.splice(Math.min(Math.max(x.i,0),S.order.length),0,id);
+      if(x.fav&&!isFav(id))S.favs.push(id);
+      if(x.st)S.stats[id]=x.st;if(x.pos)S.pos[id]=x.pos;if(x.trim)S.trims[id]=x.trim;if(x.marks)S.marks[id]=x.marks;
+      x.lists.forEach(function(r){var l=plById(r.id);if(l&&l.ids.indexOf(id)<0)l.ids.splice(Math.min(r.j,l.ids.length),0,id)});
+      dbPatch(id,{deleted:false});
+    });
+    save();render();
+  },function(){snap.forEach(function(x){dbDel(x.t.id);if(x.t.url)URL.revokeObjectURL(x.t.url)})});
+}
+
+// edit song info
+var inf={};
+function openInfo(id){
+  var t=byId[id];if(!t)return;
+  inf={id:id,art:t.art||null};
+  $("inT").value=t.name;$("inA").value=t.artist||"";$("inB").value=t.album||"";fillTh($("inTh"),{art:inf.art});
+  $("info").classList.add("show");
+}
+function closeInfo(){$("info").classList.remove("show");inf={}}
+$("inX").onclick=closeInfo;
+$("inPick").onclick=function(){$("artFile").click()};
+$("inRm").onclick=function(){inf.art=null;fillTh($("inTh"),{art:null})};
+$("artFile").onchange=async function(e){
+  var f=e.target.files[0];e.target.value="";if(!f)return;
+  var d=await thumb({bytes:new Uint8Array(await f.arrayBuffer()),mime:f.type||"image/jpeg"});
+  if(!d)return toast("Couldn't read that image");
+  inf.art=d;fillTh($("inTh"),{art:d});
+};
+$("inSave").onclick=function(){
+  var t=byId[inf.id];if(!t)return closeInfo();
+  var n=$("inT").value.trim()||t.name,a=$("inA").value.trim(),b=$("inB").value.trim();
+  t.name=n;t.title=n;t.artist=a||null;t.album=b||null;t.art=inf.art;t.au=null;t.edited=true;t.scanned=true;
+  dbPatch(t.id,{name:n,title:n,artist:t.artist,album:t.album,art:t.art,edited:true,scanned:true});
+  save();var id=t.id;closeInfo();render();if(cur===id)meta();toast("Saved");
+};
+
+// skip and bookmarks
+function skip(d){
+  if(cur==null)return;var dur=audio.duration||0,t=audio.currentTime+d;
+  audio.currentTime=Math.max(trimStart(cur),dur?Math.min(t,dur-0.3):t);
+}
+$("skb").onclick=function(){skip(-15)};
+$("skf").onclick=function(){skip(15)};
+function drawMarks(){
+  var ul=$("mkList"),a=S.marks[cur]||[],id=cur;ul.innerHTML="";
+  a.forEach(function(m,i){
+    var li=document.createElement("li"),b=btn("t",""),n1=document.createElement("span");
+    n1.className="nm";n1.textContent=fmt(m.t);b.appendChild(n1);
+    if(m.l){var n2=document.createElement("span");n2.className="ar";n2.textContent=m.l;b.appendChild(n2)}
+    b.onclick=function(){audio.currentTime=m.t;if(audio.paused)audio.play().catch(function(){});$("marks").classList.remove("show")};
+    var e=btn("x","✎");e.setAttribute("aria-label","Edit label");e.onclick=function(){var v=prompt("Label for "+fmt(m.t),m.l||"");if(v!==null){m.l=v.trim();save();drawMarks()}};
+    var d=btn("x","✕");d.setAttribute("aria-label","Delete bookmark");
+    d.onclick=function(){
+      var row=a.splice(i,1)[0];if(!a.length)delete S.marks[id];save();drawMarks();
+      offerUndo("Bookmark removed",function(){var l=(S.marks[id]=S.marks[id]||[]);l.push(row);l.sort(function(x,y){return x.t-y.t});save();if(cur===id&&$("marks").classList.contains("show"))drawMarks()});
+    };
+    li.appendChild(b);li.appendChild(e);li.appendChild(d);ul.appendChild(li);
+  });
+  $("mkE").style.display=a.length?"none":"block";
+}
+$("mkb").onclick=function(){if(cur==null)return toast("Play a song first");$("mkT").textContent=nm(cur);$("marks").classList.add("show");drawMarks()};
+$("mkX").onclick=function(){$("marks").classList.remove("show")};
+$("mkAdd").onclick=function(){
+  if(cur==null)return;var t=Math.floor(audio.currentTime),l=(S.marks[cur]=S.marks[cur]||[]);
+  l.push({t:t,l:""});l.sort(function(x,y){return x.t-y.t});save();drawMarks();toast("Bookmarked "+fmt(t));
+};
+
+// keyboard shortcuts (computers)
+document.addEventListener("keydown",function(e){
+  var tg=e.target&&e.target.tagName;
+  if(tg==="INPUT"||tg==="TEXTAREA"||tg==="BUTTON"||e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key===" "){e.preventDefault();toggle()}
+  else if(e.key==="ArrowRight"){e.preventDefault();skip(15)}
+  else if(e.key==="ArrowLeft"){e.preventDefault();skip(-15)}
+  else if(e.key==="b"||e.key==="B"){if(cur!=null){var t=Math.floor(audio.currentTime),l=(S.marks[cur]=S.marks[cur]||[]);l.push({t:t,l:""});l.sort(function(x,y){return x.t-y.t});save();toast("Bookmarked "+fmt(t))}}
+});
+
 var AUTO={off:"Off",system:"With my phone",time:"On a schedule"},trimmedEnd=false,selMode=false,sel={},selKey="",acc=0,lastT=null,counted=false,SMART={"s:added":"Recently added","s:played":"Recently played","s:most":"Most played"};
 function trimStart(id){var t=id!=null&&S.trims[id];return t?t[0]:0}
 function nightNow(){
@@ -721,9 +867,8 @@ function selQueue(){
 }
 function selRemove(){
   var ids=picked();
-  if(tab==="pl"&&openPl){var p=plById(openPl);p.ids=p.ids.filter(function(i){return ids.indexOf(i)<0});save();toast("Removed from playlist");selDone();return}
-  if(!confirm("Delete "+ids.length+(ids.length===1?" song":" songs")+" from your library?"))return;
-  ids.forEach(function(id){removeTrack(id)});selDone();
+  if(tab==="pl"&&openPl){var p=plById(openPl),before=p.ids.slice();p.ids=p.ids.filter(function(i){return ids.indexOf(i)<0});save();selDone();offerUndo("Removed "+ids.length+(ids.length===1?" song":" songs")+" from playlist",function(){p.ids=before;save();render()});return}
+  removeTracks(ids);selDone();
 }
 $("selBtn").onclick=function(){selMode=!selMode;sel={};render()};
 
@@ -886,7 +1031,7 @@ async function backup(){
     var idx={},songs=[],ents=[];
     S.order.forEach(function(id,k){
       var t=byId[id],fn="songs/"+String(k+1).padStart(4,"0")+" "+safeName(t.name)+"."+ext(t.blob.type);
-      idx[id]=k;songs.push({file:fn,name:t.name,type:t.blob.type||"audio/mpeg",orig:t.orig||null,trim:S.trims[id]||null,added:t.added||null,pos:S.pos[id]||null,stats:S.stats[id]||null});ents.push({name:fn,blob:t.blob});
+      idx[id]=k;songs.push({file:fn,name:t.name,type:t.blob.type||"audio/mpeg",orig:t.orig||null,trim:S.trims[id]||null,added:t.added||null,pos:S.pos[id]||null,stats:S.stats[id]||null,marks:S.marks[id]||null,edit:t.edited?{title:t.title,artist:t.artist,album:t.album,art:t.art}:null});ents.push({name:fn,blob:t.blob});
     });
     var m=function(a){return a.filter(function(x){return idx[x]!==undefined}).map(function(x){return idx[x]})};
     var info={app:"melodies",v:1,date:new Date().toISOString(),songs:songs,state:{
@@ -915,9 +1060,11 @@ async function restore(file){
       if(!ent||ent.method!==0){ids.push(null);continue}
       $("setmsg").textContent="Restoring "+(i+1)+" of "+info.songs.length+"…";
       b=new Blob([await(await zipBlob(file,ent)).arrayBuffer()],{type:s.type||"audio/mpeg"});
-      id=await dbAdd({added:s.added||Date.now()+i,name:s.name,blob:b,type:s.type,orig:s.orig||null});
+      var rec={added:s.added||Date.now()+i,name:s.name,blob:b,type:s.type,orig:s.orig||null};
+      if(s.edit){rec.title=s.edit.title;rec.artist=s.edit.artist;rec.album=s.edit.album;rec.art=s.edit.art;rec.edited=true;rec.scanned=true}
+      id=await dbAdd(rec);
       if(id==null)id=Date.now()+i;else added.push(id);
-      nb[id]={id:id,added:s.added||Date.now()+i,name:s.name,blob:b,orig:s.orig||null};ids.push(id);
+      nb[id]=Object.assign({id:id},rec);ids.push(id);
     }
     if(added.length){
       msg("Checking restored songs…");
@@ -931,7 +1078,7 @@ async function restore(file){
     audio.pause();audio.removeAttribute("src");cur=null;ctx=[];ctxPos=-1;queue=[];pendingSeek=null;byId=nb;
     var st=info.state||{},m=function(a){return(a||[]).map(function(x){return ids[x]}).filter(function(x){return x!=null})};
     S.order=m(st.order);S.favs=m(st.favs);
-    S.trims={};S.stats={};S.pos={};info.songs.forEach(function(s,k){if(ids[k]==null)return;if(s.trim)S.trims[ids[k]]=s.trim;if(s.pos)S.pos[ids[k]]=s.pos;if(s.stats)S.stats[ids[k]]=s.stats});
+    S.trims={};S.stats={};S.pos={};S.marks={};info.songs.forEach(function(s,k){if(ids[k]==null)return;if(s.marks)S.marks[ids[k]]=s.marks;if(s.trim)S.trims[ids[k]]=s.trim;if(s.pos)S.pos[ids[k]]=s.pos;if(s.stats)S.stats[ids[k]]=s.stats});
     S.lists=(st.lists||[]).map(function(l,k){return{id:"p"+Date.now()+k,name:l.name,ids:m(l.ids)}});
     S.last=st.last&&ids[st.last.i]!=null?{id:ids[st.last.i],t:st.last.t||0}:null;
     S.speed=SP.indexOf(st.speed)>-1?st.speed:1;S.repeat=st.repeat|0;S.shuffle=!!st.shuffle;S.resume=st.resume!==false;S.carry=st.carry!==false;
@@ -967,7 +1114,7 @@ function wipeAll(){
   if(!confirm("Delete ALL songs, playlists and favorites from this app? This can't be undone."))return;
   Object.keys(byId).forEach(function(k){var t=byId[k];dbDel(t.id);if(t.url)URL.revokeObjectURL(t.url)});
   audio.pause();audio.removeAttribute("src");byId={};cur=null;ctx=[];ctxPos=-1;queue=[];pendingSeek=null;
-  S.order=[];S.favs=[];S.lists=[];S.last=null;save();meta();render();drawSettings();msg("Library cleared.");
+  S.order=[];S.favs=[];S.lists=[];S.last=null;S.marks={};S.pos={};S.stats={};S.trims={};save();meta();render();drawSettings();msg("Library cleared.");
 }
 function srow(label,right,fn,cls){
   var b=btn("srow"+(cls?" "+cls:""),""),l=document.createElement("span");l.textContent=label;b.appendChild(l);
@@ -1066,7 +1213,8 @@ $("list").onpointerdown=function(e){
 };
 
 openDB().then(dbAll).then(function(rows){
-  rows.forEach(function(r){byId[r.id]={id:r.id,added:r.added,name:r.name,blob:r.blob,orig:r.orig,title:r.title,artist:r.artist,album:r.album,art:r.art,scanned:r.scanned}});
+  rows=rows.filter(function(r){if(r.deleted){dbDel(r.id);return false}return true});
+  rows.forEach(function(r){byId[r.id]={id:r.id,added:r.added,name:r.name,blob:r.blob,orig:r.orig,title:r.title,artist:r.artist,album:r.album,art:r.art,scanned:r.scanned,edited:r.edited}});
   var ok=function(i){return byId[i]!==undefined};
   S.order=S.order.filter(ok);rows.forEach(function(r){if(S.order.indexOf(r.id)<0)S.order.push(r.id)});
   S.favs=S.favs.filter(ok);S.lists.forEach(function(l){l.ids=l.ids.filter(ok)});save();
