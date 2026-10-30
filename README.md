@@ -14,9 +14,9 @@ It's a single web page, so there's nothing to download from an app store.
 - **Play next and Add to queue:** build a queue on the fly
 - **Drag to reorder** songs in the Library, a playlist, or the Queue (grab the ≡ handle)
 - **Rename songs:** fix a song's displayed name from its ⋯ menu
-- **Shuffle and repeat:** repeat cycles through off, repeat all, and repeat one
+- **Shuffle and repeat:** true shuffle (every song plays once before any repeats, and Previous steps back through what played), a **Shuffle all** button, and repeat that cycles through off, repeat all, and repeat one
 - **Playback speed:** 0.75×, 1×, 1.25×, 1.5×, and 2×
-- **Picks up where you left off:** remembers your last song and position
+- **Picks up where you left off:** remembers your last song and position, and reopens in the same playlist, Favorites, or Library you were playing from
 - **Remembers your settings:** repeat, shuffle, speed, and theme stick after you close the app
 - **Lock screen controls:** play, pause, next, and previous from the lock screen and Control Center, where your device supports it
 - **Themes:** Dark (default), Cream, Peach, Mint, and Deep Teal, using the Sweet Summer color palette. The opening screen follows your theme too
@@ -29,6 +29,16 @@ It's a single web page, so there's nothing to download from an app store.
 - **Duplicate warning:** you're told before adding songs that are already in your library
 - **Trim silence:** cut silence from the start or end of a song during playback, with auto-detect
 - **Auto dark mode:** switch to a night theme with your phone's appearance or on a schedule
+- **Mini player:** a slim player bar stays at the bottom while you scroll your list
+- **Song info and album art:** titles, artists, albums, and cover art are read from your MP3 files, shown in the list and on the lock screen, and searchable
+- **Sorting:** sort the Library and Favorites by name, artist, or date added
+- **Smart lists:** automatic Recently added, Recently played, and Most played lists
+- **Position memory:** long songs (over 10 minutes) resume where you left off
+- **Queue tools:** clear the queue or save it as a playlist
+- **Edit song info:** change a song's title, artist, album, and cover art
+- **Undo:** take back removed songs, deleted playlists, cleared queues, and more for a few seconds
+- **Skip ±15 seconds and bookmarks:** jump around long tracks and save spots to return to
+- **Wide layout:** a two-column layout on iPad and computers, plus keyboard shortcuts
 
 ## Install it on your device
 
@@ -60,7 +70,7 @@ You can also use it without installing, just by keeping the page open in a brows
 
 ### Adding music
 
-1. In the **Library** tab, tap **Add songs from this phone**.
+1. In the **Library** tab, tap **Add songs**.
 2. Pick one or more audio files, such as MP3s, from your Files app or wherever they're stored.
 3. They appear in your Library. Tap a song to play it.
 
@@ -81,10 +91,72 @@ Tap the ⋯ next to any song for:
 - **Add to queue:** put it at the end of the queue
 - **Add to playlist…:** add it to an existing playlist or a new one
 - **Rename:** change the name shown in the app
+- **Edit info…:** change the title, artist, album, and cover art
 - **Remove from this playlist:** only when you're inside a playlist
 - **Remove from library:** delete it from the app
 
 Renaming only changes the name shown in melodies. Your original files are never touched. Removing a song deletes only the copy stored inside the app.
+
+### Editing song info
+
+Tap ⋯ → **Edit info…** to change a song's title, artist, and album, or to choose your own cover image (**Choose cover**) or remove the current one. Edits are stored in the app, not inside the MP3 file, and they're included in backups. Edited songs are skipped by **Rescan song info**, so your changes aren't overwritten.
+
+### Undo
+
+Removing songs (one or many), removing songs from a playlist, deleting a playlist, clearing the queue, and deleting a bookmark all show an **Undo** button for about 9 seconds. Undoing a removed song brings back its place in your Library, its playlists, favorite, play history, saved position, trim, and bookmarks. If you close the app during that window, the removal still goes through. **Delete all songs & playlists** in Settings does not have undo and asks first.
+
+### Skip and bookmarks
+
+- **−15 / +15** under the player jump back or forward 15 seconds.
+- The **flag** button opens bookmarks for the current song. Tap **+ Add bookmark here** to save the spot, tap a bookmark to jump to it, ✎ to label it (for example "Chapter 3"), and ✕ to delete it.
+- Bookmarks are saved in your backups.
+
+The lock screen still shows previous/next track buttons. The ±15 buttons are inside the app.
+
+### Bigger screens and keyboard shortcuts
+
+On iPad and computers (about 820 pixels wide or more), the player stays on the left while your library, playlists, and queue fill the right. Phones keep the single column. With a keyboard: **Space** plays or pauses, **←** and **→** skip 15 seconds, and **B** adds a bookmark at the current spot.
+
+### Shuffle
+
+- Tap the shuffle button (the crossed arrows) to turn shuffle on or off. Shuffle plays every song in the current list once, in random order, before anything repeats. **Previous** steps back through what already played.
+- With shuffle on and **Repeat all** on, it keeps going and reshuffles after each full pass. With repeat off, it stops after one pass.
+- **Shuffle all** (next to **Add songs** in the Library) starts shuffling your whole library from a random song. In a playlist, tap **Shuffle** next to **Play**.
+- Songs you queue with **Play next** or **Add to queue** still play first, and shuffle carries on afterward.
+- **Spread out artists when shuffling** (Settings → Playback, on by default) avoids playing two songs by the same artist back to back when it can. Songs without an artist aren't affected.
+
+### Reopening where you left off
+
+melodies. remembers which list you were playing from. If you were listening to a song in a playlist (or Favorites, a smart list, or the Library) and you close the app, reopening it shows that same list with your song highlighted, and playback continues through that list. If shuffle was on, the shuffle order is kept too. Tap play to continue. This needs **Resume where I left off** (Settings → Playback) to be on. If the playlist was deleted in the meantime, it falls back to the Library.
+
+### Sorting
+
+In the Library and Favorites, tap **Sort** (next to Select) and choose **Manual order**, **Name A–Z**, **Artist A–Z**, or **Recently added**. Songs without an artist go last when sorting by artist. Drag-to-reorder only works in Manual order. Songs play through in the order you see.
+
+### Smart lists
+
+In the **Playlists** tab, the **Smart lists** section has **Recently added** (your newest songs), **Recently played**, and **Most played**. They update on their own, show up to 30 songs, and can't be edited. A song counts as played after about 30 seconds (or half of a short song). Clear the history in Settings → Playback.
+
+### Remembering your place in long songs
+
+Songs longer than 10 minutes, like DJ sets or audiobooks, remember where you stopped and pick up there next time ("Resuming from …"). To start over, tap ⋯ → **Play from the beginning**. You can turn this off in Settings → Playback.
+
+### Queue
+
+The **Queue** tab has **Clear** to empty the queue and **Save as playlist** to turn what's queued into a playlist (it asks for a name).
+
+### Mini player
+
+When you scroll past the main player, a slim bar appears at the bottom with the current song, play/pause, and next. Tap the song to jump back to the full player.
+
+### Song info and album art
+
+melodies. reads the tags inside your MP3 files (ID3 tags): title, artist, album, and cover art. Songs show their cover and artist in the list, the cover appears on the spinning disc and on the lock screen, and search matches artist and album names too. Songs without tags look as they did before.
+
+- New songs are named from their title tag when it exists. You can turn this off in Settings → Library → **Use song info for names**.
+- **Rename songs from their info** applies tag titles to songs already in your library (it asks first).
+- **Rescan song info** reads the tags again.
+- Only MP3 (ID3) tags are supported for now. Other formats still play, but without tag info.
 
 ### Duplicates
 
