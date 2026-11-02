@@ -255,6 +255,12 @@ body.selmode .mini{display:none}
   <div id="setmsg" role="status"></div><div id="setact"></div>
   <div id="sbody"></div>
 </div></div>
+<div class="pick" id="logv"><div class="in">
+  <div class="bar" style="display:flex"><b>Playback log</b><button class="pill" id="lgX">Done</button></div>
+  <div class="hint">If music ever stops on its own, open this soon afterwards, tap Copy, and send it along. It's stored only on this device and holds no song names.</div>
+  <div style="display:flex;gap:8px;margin:10px 0"><button class="pill" id="lgCopy">Copy</button><button class="pill" id="lgShare">Share</button><button class="pill" id="lgClear">Clear</button></div>
+  <pre id="lgPre" style="flex:1;overflow:auto;margin:0 0 12px;font-size:11px;line-height:1.5;white-space:pre-wrap;-webkit-user-select:text;user-select:text;background:var(--soft);padding:10px;border-radius:10px"></pre>
+</div></div>
 <div class="toast" id="toast"></div>
 <script>
 (function(){
@@ -484,7 +490,7 @@ function meta(){
   if(t&&"mediaSession" in navigator){try{var u=artUrl(t);navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:t.artist||"melodies.",album:t.album||"",artwork:u?[{src:u,sizes:"256x256",type:"image/jpeg"}]:[]})}catch(e){}}
   upMini();
 }
-function tryPlay(n,id){audio.play().catch(function(){if(n>0&&cur===id)setTimeout(function(){tryPlay(n-1,id)},400)})}
+function tryPlay(n,id){audio.play().then(function(){},function(e){lg("play() refused: "+(e&&e.name)+", retries left "+n);if(cur!==id)return;if(n>0)setTimeout(function(){tryPlay(n-1,id)},400);else if(wantPlay)startResume()})}
 function ps(s){try{if("mediaSession" in navigator)navigator.mediaSession.playbackState=s}catch(e){}}
 function load(id){
   var t=byId[id];if(!t)return;cur=id;wantPlay=true;lastLoad=Date.now();
@@ -492,9 +498,9 @@ function load(id){
   var rp=S.posOn!==false&&S.pos[id];pendingSeek=Math.max(rp||0,trimStart(id))||null;if(rp&&rp>trimStart(id))toast("Resuming from "+fmt(rp));
   trimmedEnd=false;acc=0;lastT=null;counted=false;preDone=0;var sx=S.stats[id]||(S.stats[id]={n:0,last:0});sx.last=Date.now();
   var o=other();
-  if(S.preload!==false&&pre.id===id&&o.src===t.url&&o.readyState>=3){
+  if(S.fastSwap===true&&pre.id===id&&o.src===t.url&&o.readyState>=3){
     var old=audio,st=Math.max(rp||0,trimStart(id));
-    pendingSeek=null;audio=o;
+    lg("load #"+id+" via preloaded element");pendingSeek=null;audio=o;
     try{if(st>0)o.currentTime=st}catch(e){}
     o.defaultPlaybackRate=o.playbackRate=S.speed;
     var pr=o.play();
@@ -506,16 +512,17 @@ function load(id){
     try{old.removeAttribute("src");old.load()}catch(e){}
     pre.id=null;
   }else{
-    audio.src=t.url;audio.defaultPlaybackRate=audio.playbackRate=S.speed;
+    lg("load #"+id);audio.src=t.url;audio.defaultPlaybackRate=audio.playbackRate=S.speed;
     tryPlay(2,id);
   }
-  S.last={id:id,t:0};S.shuf=shuffle&&shufQ.length?{q:shufQ,p:shufPos}:null;save();meta();render();
+  S.last={id:id,t:0};S.shuf=shuffle&&shufQ.length?{q:shufQ,p:shufPos}:null;save();meta();if(document.hidden)needRender=true;else render();
 }
 function playFromView(id,li){
   if(tab==="q"){var i=Array.prototype.indexOf.call($("list").children,li);queue.splice(i,1);load(id);return}
   ctx=viewIds().slice();ctxPos=ctx.indexOf(id);setSrc(tab,openPl);if(shuffle)startShuffle(id);load(id);
 }
-function go(dir){
+function go(dir){var lt=lastLoad;go0(dir);if(lastLoad===lt)lg("go("+dir+"): nothing to play (end of list)")}
+function go0(dir){
   var id;
   if(dir>0&&queue.length)id=queue.shift();
   else if(shuffle&&ctx.length>1){
@@ -565,9 +572,9 @@ $("addBtn").onclick=function(){$("file").click()};
 $("srch").oninput=render;
 Array.prototype.forEach.call(document.querySelectorAll(".tabs button"),function(b){b.onclick=function(){tab=b.dataset.t;openPl=null;$("srch").value="";render()}});
 $("file").onchange=function(e){var fs=Array.prototype.slice.call(e.target.files);e.target.value="";if(fs.length)addFiles(fs)};
-function hPlay(){wantPlay=true;lastPlay=Date.now();stopResume();ps("playing");$("mpp").innerHTML=I.pause;$("pp").innerHTML=I.pause;$("pp").setAttribute("aria-label","Pause");$("app").classList.add("playing")};
-function hPause(){$("mpp").innerHTML=I.play;if(audio.ended)wantPlay=false;else{ps("paused");if(wantPlay&&cur!=null&&Date.now()-lastLoad>1500)startResume()}$("pp").innerHTML=I.play;$("pp").setAttribute("aria-label","Play");$("app").classList.remove("playing");savePos(true)};
-function hEnded(){if(repeat===2){audio.currentTime=trimStart(cur);counted=false;acc=0;lastT=null;audio.play();return}go(1)};
+function hPlay(){lg("play #"+cur+" t="+Math.floor(audio.currentTime||0));wantPlay=true;lastPlay=Date.now();stopResume();ps("playing");$("mpp").innerHTML=I.pause;$("pp").innerHTML=I.pause;$("pp").setAttribute("aria-label","Pause");$("app").classList.add("playing")};
+function hPause(){lg("pause t="+Math.floor(audio.currentTime||0)+(audio.ended?" (song finished)":"")+" wantPlay="+wantPlay);$("mpp").innerHTML=I.play;if(audio.ended)wantPlay=false;else{ps("paused");if(wantPlay&&cur!=null&&Date.now()-lastLoad>1500)startResume()}$("pp").innerHTML=I.play;$("pp").setAttribute("aria-label","Play");$("app").classList.remove("playing");savePos(true)};
+function hEnded(){lg("ended #"+cur);if(repeat===2){audio.currentTime=trimStart(cur);counted=false;acc=0;lastT=null;audio.play();return}go(1)};
 function hMeta(){posState();if(pendingSeek!=null){audio.currentTime=pendingSeek;pendingSeek=null}hTime()};
 var seeking=false;
 function hTime(){
@@ -583,7 +590,7 @@ function hTime(){
   if(preDone<1&&c>3){preDone=1;preload()}else if(preDone<2&&d&&d-c<15){preDone=2;preload()}
 };
 function guard(a,f){return function(){if(a===audio)f()}}
-function bindAudio(a){a.onplay=guard(a,hPlay);a.onpause=guard(a,hPause);a.onended=guard(a,hEnded);a.onloadedmetadata=guard(a,hMeta);a.ontimeupdate=guard(a,hTime);a.onseeked=guard(a,posState);a.onratechange=guard(a,posState)}
+function bindAudio(a){a.onplay=guard(a,hPlay);a.onpause=guard(a,hPause);a.onended=guard(a,hEnded);a.onloadedmetadata=guard(a,hMeta);a.ontimeupdate=guard(a,hTime);a.onseeked=guard(a,posState);a.onratechange=guard(a,posState);a.onerror=guard(a,function(){lg("audio error code="+(a.error?a.error.code:"?"))});a.onstalled=guard(a,function(){lg("stalled")});a.onwaiting=guard(a,function(){lg("waiting (buffering)")})}
 bindAudio(audioA);bindAudio(audioB);
 $("seek").oninput=function(){seeking=true;if(audio.duration)audio.currentTime=audio.duration*$("seek").value/1000};
 $("seek").onchange=function(){seeking=false};
@@ -591,10 +598,10 @@ document.addEventListener("visibilitychange",function(){if(document.hidden)saveP
 window.addEventListener("pagehide",function(){savePos(true)});
 if("mediaSession" in navigator){
   try{
-    navigator.mediaSession.setActionHandler("play",function(){if(audio.paused)toggle()});
-    navigator.mediaSession.setActionHandler("pause",function(){if(!audio.paused)toggle()});
-    navigator.mediaSession.setActionHandler("nexttrack",function(){go(1)});
-    navigator.mediaSession.setActionHandler("previoustrack",function(){$("prev").click()});
+    navigator.mediaSession.setActionHandler("play",function(){lg("lock screen: play");if(audio.paused)toggle()});
+    navigator.mediaSession.setActionHandler("pause",function(){lg("lock screen: pause");if(!audio.paused)toggle()});
+    navigator.mediaSession.setActionHandler("nexttrack",function(){lg("lock screen: next");go(1)});
+    navigator.mediaSession.setActionHandler("previoustrack",function(){lg("lock screen: previous");$("prev").click()});
     navigator.mediaSession.setActionHandler("seekto",function(d){if(d&&d.seekTime!=null){audio.currentTime=Math.max(trimStart(cur),d.seekTime);posState()}});
   }catch(e){}
 }
@@ -878,6 +885,28 @@ document.addEventListener("keydown",function(e){
   else if(e.key==="b"||e.key==="B"){if(cur!=null){var t=Math.floor(audio.currentTime),l=(S.marks[cur]=S.marks[cur]||[]);l.push({t:t,l:""});l.sort(function(x,y){return x.t-y.t});save();toast("Bookmarked "+fmt(t))}}
 });
 
+var LOGK="melodies-log",logBuf=[];
+try{logBuf=JSON.parse(localStorage.getItem(LOGK)||"[]")}catch(e){}
+function lg(m){
+  var d=new Date(),p=function(n){return("0"+n).slice(-2)};
+  logBuf.push(p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds())+" "+m+" ["+(document.hidden?"screen off/hidden":"visible")+"]");
+  if(logBuf.length>400)logBuf.splice(0,logBuf.length-400);
+  try{localStorage.setItem(LOGK,JSON.stringify(logBuf))}catch(e){}
+}
+function openLog(){var p=$("lgPre");p.textContent=logBuf.join("\n")||"(empty)";$("logv").classList.add("show");p.scrollTop=p.scrollHeight}
+$("lgX").onclick=function(){$("logv").classList.remove("show")};
+$("lgClear").onclick=function(){logBuf=[];try{localStorage.removeItem(LOGK)}catch(e){}$("lgPre").textContent="(empty)"};
+$("lgCopy").onclick=function(){
+  var t=logBuf.join("\n");
+  try{navigator.clipboard.writeText(t).then(function(){toast("Log copied")},function(){prompt("Copy this log",t)})}catch(e){prompt("Copy this log",t)}
+};
+$("lgShare").onclick=function(){saveFile(new Blob([logBuf.join("\n")],{type:"text/plain"}),"melodies-log.txt")};
+lg("app opened (fastSwap "+(S.fastSwap===true?"on":"off")+", repeat "+repeat+", shuffle "+(shuffle?"on":"off")+")");
+setInterval(function(){if(!audio.paused&&cur!=null)lg("playing t="+Math.floor(audio.currentTime))},10000);
+window.addEventListener("pagehide",function(){lg("pagehide")});
+window.addEventListener("pageshow",function(){lg("pageshow")});
+document.addEventListener("freeze",function(){lg("page frozen")});
+document.addEventListener("resume",function(){lg("page resumed")});
 function other(){return audio===audioA?audioB:audioA}
 // resume after interruptions (calls, alarms, other apps)
 function resumeWin(){return S.resumeMin==null?30:S.resumeMin}
@@ -885,6 +914,7 @@ function pauseNow(){wantPlay=false;stopResume();audio.pause()}
 function stopResume(){clearTimeout(resumeT);resumeT=null;resumeUntil=0}
 function startResume(){
   var w=resumeWin();if(!w)return;
+  lg("interrupted; will retry for up to "+w+" min");
   var n=Date.now();if(!intStart||n-lastPlay>8000)intStart=n;
   resumeUntil=intStart+w*60000;if(n>resumeUntil)return;
   resumeTries=0;clearTimeout(resumeT);resumeT=setTimeout(tryResume,1200);
@@ -893,6 +923,7 @@ function tryResume(){
   resumeT=null;
   if(!wantPlay||cur==null||!audio.paused||Date.now()>resumeUntil)return stopResume();
   if(Date.now()-lastDev<3000)return stopResume();
+  lg("retry #"+(resumeTries+1));
   var again=function(){resumeTries++;resumeT=setTimeout(tryResume,Math.min(resumeTries>30?15000:5000,1500+resumeTries*500))};
   var p;try{p=audio.play()}catch(e){again();return}
   if(p&&p.then)p.then(function(){},again);else again();
@@ -900,7 +931,7 @@ function tryResume(){
 function kickResume(){
   if(wantPlay&&cur!=null&&audio.paused&&resumeWin()&&resumeUntil>Date.now()){clearTimeout(resumeT);resumeT=setTimeout(tryResume,300)}
 }
-document.addEventListener("visibilitychange",function(){if(!document.hidden)kickResume()});
+document.addEventListener("visibilitychange",function(){lg("screen "+(document.hidden?"off/hidden":"on/visible"));if(!document.hidden){if(needRender){needRender=false;render()}kickResume()}});
 window.addEventListener("focus",kickResume);window.addEventListener("pageshow",kickResume);
 try{navigator.mediaDevices.addEventListener("devicechange",function(){lastDev=Date.now()})}catch(e){}
 function posState(){
@@ -922,15 +953,17 @@ function peekNext(){
   return list[n]!=null?list[n]:null;
 }
 function preload(){
-  if(S.preload===false)return;
+  if(S.fastSwap!==true)return;
   var id=peekNext(),o=other();
   if(id==null||!byId[id]){pre.id=null;return}
   var t=byId[id];if(!t.url)t.url=URL.createObjectURL(t.blob);
   if(pre.id===id&&o.src===t.url)return;
   pre.id=id;o.src=t.url;o.defaultPlaybackRate=o.playbackRate=S.speed;try{o.load()}catch(e){}
 }
-document.addEventListener("click",function unlock(){
-  document.removeEventListener("click",unlock,true);
+var unlocked=false;
+document.addEventListener("click",function(){
+  if(unlocked||S.fastSwap!==true)return;
+  unlocked=true;
   try{
     audioB.muted=true;audioB.src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
     var p=audioB.play();
@@ -959,7 +992,7 @@ $("shufAll").onclick=function(){
   shuffle=true;S.shuffle=true;ctx=S.order.slice();setSrc("lib");
   var id=ctx[Math.floor(Math.random()*ctx.length)];ctxPos=ctx.indexOf(id);startShuffle(id);load(id);
 };
-var AUTO={off:"Off",system:"With my phone",time:"On a schedule"},trimmedEnd=false,selMode=false,sel={},selKey="",acc=0,lastT=null,counted=false,shufQ=[],shufPos=-1,shufSig="",lastPS=0,preDone=0,brMode="artists",pre={id:null},wantPlay=false,resumeT=null,resumeUntil=0,resumeTries=0,intStart=0,lastPlay=0,lastDev=0,lastLoad=0,SMART={"s:added":"Recently added","s:played":"Recently played","s:most":"Most played"};
+var AUTO={off:"Off",system:"With my phone",time:"On a schedule"},trimmedEnd=false,selMode=false,sel={},selKey="",acc=0,lastT=null,counted=false,shufQ=[],shufPos=-1,shufSig="",lastPS=0,preDone=0,brMode="artists",pre={id:null},needRender=false,wantPlay=false,resumeT=null,resumeUntil=0,resumeTries=0,intStart=0,lastPlay=0,lastDev=0,lastLoad=0,SMART={"s:added":"Recently added","s:played":"Recently played","s:most":"Most played"};
 function trimStart(id){var t=id!=null&&S.trims[id];return t?t[0]:0}
 function nightNow(){
   if(S.auto==="system")return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
@@ -1245,7 +1278,7 @@ async function backup(){
       order:m(S.order),favs:m(S.favs),
       lists:S.lists.map(function(l){return{name:l.name,ids:m(l.ids)}}),
       last:S.last&&idx[S.last.id]!==undefined?{i:idx[S.last.id],t:S.last.t}:null,
-      speed:S.speed,repeat:S.repeat|0,shuffle:!!S.shuffle,theme:S.theme||"dark",resume:S.resume!==false,carry:S.carry!==false,auto:S.auto||"off",nf:S.nightFrom||"19:00",nt:S.nightTo||"07:00",nth:S.nightTheme||"dark",sort:S.sort||"manual",posOn:S.posOn!==false,spread:S.spread!==false,preload:S.preload!==false,resumeMin:resumeWin()}};
+      speed:S.speed,repeat:S.repeat|0,shuffle:!!S.shuffle,theme:S.theme||"dark",resume:S.resume!==false,carry:S.carry!==false,auto:S.auto||"off",nf:S.nightFrom||"19:00",nt:S.nightTo||"07:00",nth:S.nightTheme||"dark",sort:S.sort||"manual",posOn:S.posOn!==false,spread:S.spread!==false,fastSwap:S.fastSwap===true,resumeMin:resumeWin()}};
     ents.unshift({name:"melodies.json",blob:new Blob([JSON.stringify(info)],{type:"application/json"})});
     msg("Building backup…");
     var z=await makeZip(ents,function(a,b){$("setmsg").textContent="Building backup… "+a+" of "+b});
@@ -1290,7 +1323,7 @@ async function restore(file){
     S.last=st.last&&ids[st.last.i]!=null?{id:ids[st.last.i],t:st.last.t||0}:null;
     S.speed=SP.indexOf(st.speed)>-1?st.speed:1;S.repeat=st.repeat|0;S.shuffle=!!st.shuffle;S.resume=st.resume!==false;S.carry=st.carry!==false;
     shuffle=S.shuffle;repeat=S.repeat;audio.defaultPlaybackRate=audio.playbackRate=S.speed;
-    if(st.theme)S.theme=st.theme;S.auto=st.auto||"off";S.nightFrom=st.nf||"19:00";S.nightTo=st.nt||"07:00";S.nightTheme=st.nth||"dark";S.sort=st.sort||"manual";S.posOn=st.posOn!==false;S.spread=st.spread!==false;S.preload=st.preload!==false;S.resumeMin=st.resumeMin==null?30:st.resumeMin;S.src=null;S.shuf=null;refreshTheme();
+    if(st.theme)S.theme=st.theme;S.auto=st.auto||"off";S.nightFrom=st.nf||"19:00";S.nightTo=st.nt||"07:00";S.nightTheme=st.nth||"dark";S.sort=st.sort||"manual";S.posOn=st.posOn!==false;S.spread=st.spread!==false;S.fastSwap=st.fastSwap===true;S.resumeMin=st.resumeMin==null?30:st.resumeMin;S.src=null;S.shuf=null;refreshTheme();
     save();meta();resumeLast();render();drawSettings();scanTags();
     msg("Restored "+S.order.length+" songs.");
   }catch(e){added.forEach(dbDel);msg(e&&e.message==="verify"?"The songs couldn't be saved correctly on this device, so nothing was changed.":"That doesn't look like a melodies. backup, or it couldn't be read. Your library was not changed.")}
@@ -1360,11 +1393,12 @@ function drawSettings(){
   b.appendChild(srow("Continue into Library when a list ends",sw(S.carry!==false),function(){S.carry=(S.carry===false);save();drawSettings()}));
   var RW=[0,5,15,30,60],RWL={0:"Off",5:"Up to 5 min",15:"Up to 15 min",30:"Up to 30 min",60:"Up to 1 hour"};
   b.appendChild(srow("Resume after interruptions",RWL[resumeWin()]||"Up to 30 min",function(){S.resumeMin=RW[(RW.indexOf(resumeWin())+1)%RW.length];save();drawSettings()}));
-  b.appendChild(srow("Preload the next song",sw(S.preload!==false),function(){S.preload=(S.preload===false);if(S.preload===false)pre.id=null;save();drawSettings()}));
+  b.appendChild(srow("Faster song changes (experimental)",sw(S.fastSwap===true),function(){S.fastSwap=(S.fastSwap!==true);if(!S.fastSwap)pre.id=null;save();drawSettings()}));
   b.appendChild(srow("Spread out artists when shuffling",sw(S.spread!==false),function(){S.spread=(S.spread===false);save();shufQ=[];drawSettings()}));
   b.appendChild(srow("Remember position in long songs",sw(S.posOn!==false),function(){S.posOn=(S.posOn===false);if(S.posOn===false)S.pos={};save();drawSettings()}));
+  b.appendChild(srow("Playback log",null,openLog));
   b.appendChild(srow("Clear play history",null,function(){if(confirm("Clear Recently played and Most played?")){S.stats={};save();render();msg("Play history cleared.")}}));
-  hint("Songs longer than 10 minutes (DJ sets, audiobooks) pick up where you left off the next time you play them. Shuffle plays every song once before repeating; turn on Repeat all to keep going. Preloading the next song makes song changes smoother; turn it off if playback ever misbehaves. If a call, alarm, or another app pauses your music, melodies. keeps trying to restart it for the time you choose. iPhone doesn't always allow this, and it can't tell a call apart from unplugged headphones.");
+  hint("Songs longer than 10 minutes (DJ sets, audiobooks) pick up where you left off the next time you play them. Shuffle plays every song once before repeating; turn on Repeat all to keep going. Faster song changes preloads the next song, but on some iPhones it can make music stop when the screen is off, so it stays off unless you turn it on. If a call, alarm, or another app pauses your music, melodies. keeps trying to restart it for the time you choose. iPhone doesn't always allow this, and it can't tell a call apart from unplugged headphones.");
   h("Library");
   var bytes=0;S.order.forEach(function(id){if(byId[id])bytes+=byId[id].blob.size});
   b.appendChild(srow("Songs",S.order.length+" · "+fsize(bytes)));
