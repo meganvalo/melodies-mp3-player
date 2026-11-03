@@ -572,8 +572,8 @@ $("addBtn").onclick=function(){$("file").click()};
 $("srch").oninput=render;
 Array.prototype.forEach.call(document.querySelectorAll(".tabs button"),function(b){b.onclick=function(){tab=b.dataset.t;openPl=null;$("srch").value="";render()}});
 $("file").onchange=function(e){var fs=Array.prototype.slice.call(e.target.files);e.target.value="";if(fs.length)addFiles(fs)};
-function hPlay(){lg("play #"+cur+" t="+Math.floor(audio.currentTime||0));wantPlay=true;lastPlay=Date.now();stopResume();ps("playing");$("mpp").innerHTML=I.pause;$("pp").innerHTML=I.pause;$("pp").setAttribute("aria-label","Pause");$("app").classList.add("playing")};
-function hPause(){lg("pause t="+Math.floor(audio.currentTime||0)+(audio.ended?" (song finished)":"")+" wantPlay="+wantPlay);$("mpp").innerHTML=I.play;if(audio.ended)wantPlay=false;else{ps("paused");if(wantPlay&&cur!=null&&Date.now()-lastLoad>1500)startResume()}$("pp").innerHTML=I.play;$("pp").setAttribute("aria-label","Play");$("app").classList.remove("playing");savePos(true)};
+function hPlay(){lg("play #"+cur+" t="+Math.floor(audio.currentTime||0));awakeOn();wantPlay=true;lastPlay=Date.now();stopResume();ps("playing");$("mpp").innerHTML=I.pause;$("pp").innerHTML=I.pause;$("pp").setAttribute("aria-label","Pause");$("app").classList.add("playing")};
+function hPause(){lg("pause t="+Math.floor(audio.currentTime||0)+(audio.ended?" (song finished)":"")+" wantPlay="+wantPlay);setTimeout(function(){if(audio.paused)awakeOff()},1500);$("mpp").innerHTML=I.play;if(audio.ended)wantPlay=false;else{ps("paused");if(wantPlay&&cur!=null&&Date.now()-lastLoad>1500)startResume()}$("pp").innerHTML=I.play;$("pp").setAttribute("aria-label","Play");$("app").classList.remove("playing");savePos(true)};
 function hEnded(){lg("ended #"+cur);if(repeat===2){audio.currentTime=trimStart(cur);counted=false;acc=0;lastT=null;audio.play();return}go(1)};
 function hMeta(){posState();if(pendingSeek!=null){audio.currentTime=pendingSeek;pendingSeek=null}hTime()};
 var seeking=false;
@@ -901,7 +901,7 @@ $("lgCopy").onclick=function(){
   try{navigator.clipboard.writeText(t).then(function(){toast("Log copied")},function(){prompt("Copy this log",t)})}catch(e){prompt("Copy this log",t)}
 };
 $("lgShare").onclick=function(){saveFile(new Blob([logBuf.join("\n")],{type:"text/plain"}),"melodies-log.txt")};
-lg("app opened (fastSwap "+(S.fastSwap===true?"on":"off")+", repeat "+repeat+", shuffle "+(shuffle?"on":"off")+")");
+lg("app opened (keep-awake "+(S.awake===false?"off":"on")+", wakeLock "+((navigator.wakeLock&&navigator.wakeLock.request)?"supported":"not supported")+", fastSwap "+(S.fastSwap===true?"on":"off")+", repeat "+repeat+", shuffle "+(shuffle?"on":"off")+")");
 setInterval(function(){if(!audio.paused&&cur!=null)lg("playing t="+Math.floor(audio.currentTime))},10000);
 window.addEventListener("pagehide",function(){lg("pagehide")});
 window.addEventListener("pageshow",function(){lg("pageshow")});
@@ -910,7 +910,7 @@ document.addEventListener("resume",function(){lg("page resumed")});
 function other(){return audio===audioA?audioB:audioA}
 // resume after interruptions (calls, alarms, other apps)
 function resumeWin(){return S.resumeMin==null?30:S.resumeMin}
-function pauseNow(){wantPlay=false;stopResume();audio.pause()}
+function pauseNow(){wantPlay=false;stopResume();awakeOff();audio.pause()}
 function stopResume(){clearTimeout(resumeT);resumeT=null;resumeUntil=0}
 function startResume(){
   var w=resumeWin();if(!w)return;
@@ -931,7 +931,7 @@ function tryResume(){
 function kickResume(){
   if(wantPlay&&cur!=null&&audio.paused&&resumeWin()&&resumeUntil>Date.now()){clearTimeout(resumeT);resumeT=setTimeout(tryResume,300)}
 }
-document.addEventListener("visibilitychange",function(){lg("screen "+(document.hidden?"off/hidden":"on/visible"));if(!document.hidden){if(needRender){needRender=false;render()}kickResume()}});
+document.addEventListener("visibilitychange",function(){lg("screen "+(document.hidden?"off/hidden":"on/visible"));if(!document.hidden){if(needRender){needRender=false;render()}kickResume()}if(!document.hidden&&!audio.paused)awakeOn()});
 window.addEventListener("focus",kickResume);window.addEventListener("pageshow",kickResume);
 try{navigator.mediaDevices.addEventListener("devicechange",function(){lastDev=Date.now()})}catch(e){}
 function posState(){
@@ -960,6 +960,42 @@ function preload(){
   if(pre.id===id&&o.src===t.url)return;
   pre.id=id;o.src=t.url;o.defaultPlaybackRate=o.playbackRate=S.speed;try{o.load()}catch(e){}
 }
+// keep the screen awake while music plays (Wake Lock API plus a tiny silent looping video as a backup)
+var NSV="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAANMbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAnZ0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAABAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAAAAABAAAAAAHubWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAKABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABmW1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAVlzdGJsAAAAuXN0c2QAAAAAAAAAAQAAAKlhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAQABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAL2F2Y0MBQsAe/+EAF2dCwB7ZBCbARAAAAwAEAAADAFA8WLkgAQAFaMuDyyAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAAXSAAAF0gAAAAYc3R0cwAAAAAAAAABAAAACgAABAAAAAAUc3RzcwAAAAAAAAABAAAAAQAAABxzdHNjAAAAAAAAAAEAAAABAAAACgAAAAEAAAA8c3RzegAAAAAAAAAAAAAACgAAAo8AAAAKAAAACgAAAAoAAAAKAAAACgAAAAoAAAAKAAAACgAAAAoAAAAUc3RjbwAAAAAAAAABAAADfAAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAALxbWRhdAAAAnEGBf//bdxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTEwIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAFmWIhA/yYoAAw+ycnJ1111111111114AAAAGQZo4H+EYAAAABkGaVAf4RgAAAAZBmmA/wjAAAAAGQZqAP8IwAAAABkGaoD/CMAAAAAZBmsA/wjAAAAAGQZrgP8IwAAAABkGbADvCMAAAAAZBmyA3wjA=";
+function noSleepEl(){
+  if(!nsv){
+    nsv=document.createElement("video");
+    nsv.setAttribute("playsinline","");nsv.setAttribute("webkit-playsinline","");nsv.setAttribute("muted","");nsv.setAttribute("aria-hidden","true");
+    nsv.muted=true;nsv.loop=true;
+    nsv.style.cssText="position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none;z-index:-1";
+    nsv.src=NSV;document.body.appendChild(nsv);
+  }
+  return nsv;
+}
+async function awakeOn(){
+  if(S.awake===false||document.hidden)return;
+  try{
+    if(navigator.wakeLock&&navigator.wakeLock.request&&!wl){
+      var l=await navigator.wakeLock.request("screen");wl=l;
+      l.addEventListener("release",function(){if(wl===l)wl=null;lg("wake lock released")});
+      lg("wake lock on");
+    }
+  }catch(e){lg("wake lock unavailable: "+(e&&e.name))}
+  try{var v=noSleepEl();if(v.paused){await v.play();lg("keep-awake video on")}}
+  catch(e){awakeKick=true;lg("keep-awake video refused: "+(e&&e.name))}
+}
+function awakeOff(){
+  if(wl){try{wl.release()}catch(e){}wl=null}
+  if(nsv&&!nsv.paused){try{nsv.pause()}catch(e){}}
+  awakeKick=false;
+}
+document.addEventListener("click",function(){
+  if(S.awake===false)return;
+  if(!nsUnlocked){
+    nsUnlocked=true;
+    try{var v=noSleepEl();v.play().then(function(){if(audio.paused)v.pause()},function(){nsUnlocked=false})}catch(e){nsUnlocked=false}
+  }else if(awakeKick&&!audio.paused){awakeKick=false;awakeOn()}
+},true);
 var unlocked=false;
 document.addEventListener("click",function(){
   if(unlocked||S.fastSwap!==true)return;
@@ -992,7 +1028,7 @@ $("shufAll").onclick=function(){
   shuffle=true;S.shuffle=true;ctx=S.order.slice();setSrc("lib");
   var id=ctx[Math.floor(Math.random()*ctx.length)];ctxPos=ctx.indexOf(id);startShuffle(id);load(id);
 };
-var AUTO={off:"Off",system:"With my phone",time:"On a schedule"},trimmedEnd=false,selMode=false,sel={},selKey="",acc=0,lastT=null,counted=false,shufQ=[],shufPos=-1,shufSig="",lastPS=0,preDone=0,brMode="artists",pre={id:null},needRender=false,wantPlay=false,resumeT=null,resumeUntil=0,resumeTries=0,intStart=0,lastPlay=0,lastDev=0,lastLoad=0,SMART={"s:added":"Recently added","s:played":"Recently played","s:most":"Most played"};
+var AUTO={off:"Off",system:"With my phone",time:"On a schedule"},trimmedEnd=false,selMode=false,sel={},selKey="",acc=0,lastT=null,counted=false,shufQ=[],shufPos=-1,shufSig="",lastPS=0,preDone=0,brMode="artists",pre={id:null},needRender=false,wl=null,nsv=null,awakeKick=false,nsUnlocked=false,wantPlay=false,resumeT=null,resumeUntil=0,resumeTries=0,intStart=0,lastPlay=0,lastDev=0,lastLoad=0,SMART={"s:added":"Recently added","s:played":"Recently played","s:most":"Most played"};
 function trimStart(id){var t=id!=null&&S.trims[id];return t?t[0]:0}
 function nightNow(){
   if(S.auto==="system")return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
@@ -1278,7 +1314,7 @@ async function backup(){
       order:m(S.order),favs:m(S.favs),
       lists:S.lists.map(function(l){return{name:l.name,ids:m(l.ids)}}),
       last:S.last&&idx[S.last.id]!==undefined?{i:idx[S.last.id],t:S.last.t}:null,
-      speed:S.speed,repeat:S.repeat|0,shuffle:!!S.shuffle,theme:S.theme||"dark",resume:S.resume!==false,carry:S.carry!==false,auto:S.auto||"off",nf:S.nightFrom||"19:00",nt:S.nightTo||"07:00",nth:S.nightTheme||"dark",sort:S.sort||"manual",posOn:S.posOn!==false,spread:S.spread!==false,fastSwap:S.fastSwap===true,resumeMin:resumeWin()}};
+      speed:S.speed,repeat:S.repeat|0,shuffle:!!S.shuffle,theme:S.theme||"dark",resume:S.resume!==false,carry:S.carry!==false,auto:S.auto||"off",nf:S.nightFrom||"19:00",nt:S.nightTo||"07:00",nth:S.nightTheme||"dark",sort:S.sort||"manual",posOn:S.posOn!==false,spread:S.spread!==false,fastSwap:S.fastSwap===true,awake:S.awake!==false,resumeMin:resumeWin()}};
     ents.unshift({name:"melodies.json",blob:new Blob([JSON.stringify(info)],{type:"application/json"})});
     msg("Building backup…");
     var z=await makeZip(ents,function(a,b){$("setmsg").textContent="Building backup… "+a+" of "+b});
@@ -1323,7 +1359,7 @@ async function restore(file){
     S.last=st.last&&ids[st.last.i]!=null?{id:ids[st.last.i],t:st.last.t||0}:null;
     S.speed=SP.indexOf(st.speed)>-1?st.speed:1;S.repeat=st.repeat|0;S.shuffle=!!st.shuffle;S.resume=st.resume!==false;S.carry=st.carry!==false;
     shuffle=S.shuffle;repeat=S.repeat;audio.defaultPlaybackRate=audio.playbackRate=S.speed;
-    if(st.theme)S.theme=st.theme;S.auto=st.auto||"off";S.nightFrom=st.nf||"19:00";S.nightTo=st.nt||"07:00";S.nightTheme=st.nth||"dark";S.sort=st.sort||"manual";S.posOn=st.posOn!==false;S.spread=st.spread!==false;S.fastSwap=st.fastSwap===true;S.resumeMin=st.resumeMin==null?30:st.resumeMin;S.src=null;S.shuf=null;refreshTheme();
+    if(st.theme)S.theme=st.theme;S.auto=st.auto||"off";S.nightFrom=st.nf||"19:00";S.nightTo=st.nt||"07:00";S.nightTheme=st.nth||"dark";S.sort=st.sort||"manual";S.posOn=st.posOn!==false;S.spread=st.spread!==false;S.fastSwap=st.fastSwap===true;S.awake=st.awake!==false;S.resumeMin=st.resumeMin==null?30:st.resumeMin;S.src=null;S.shuf=null;refreshTheme();
     save();meta();resumeLast();render();drawSettings();scanTags();
     msg("Restored "+S.order.length+" songs.");
   }catch(e){added.forEach(dbDel);msg(e&&e.message==="verify"?"The songs couldn't be saved correctly on this device, so nothing was changed.":"That doesn't look like a melodies. backup, or it couldn't be read. Your library was not changed.")}
@@ -1391,6 +1427,7 @@ function drawSettings(){
   h("Playback");
   b.appendChild(srow("Resume where I left off",sw(S.resume!==false),function(){S.resume=(S.resume===false);save();drawSettings()}));
   b.appendChild(srow("Continue into Library when a list ends",sw(S.carry!==false),function(){S.carry=(S.carry===false);save();drawSettings()}));
+  b.appendChild(srow("Keep screen on while playing",sw(S.awake!==false),function(){S.awake=(S.awake===false);save();if(S.awake===false)awakeOff();else if(!audio.paused)awakeOn();drawSettings()}));
   var RW=[0,5,15,30,60],RWL={0:"Off",5:"Up to 5 min",15:"Up to 15 min",30:"Up to 30 min",60:"Up to 1 hour"};
   b.appendChild(srow("Resume after interruptions",RWL[resumeWin()]||"Up to 30 min",function(){S.resumeMin=RW[(RW.indexOf(resumeWin())+1)%RW.length];save();drawSettings()}));
   b.appendChild(srow("Faster song changes (experimental)",sw(S.fastSwap===true),function(){S.fastSwap=(S.fastSwap!==true);if(!S.fastSwap)pre.id=null;save();drawSettings()}));
@@ -1398,7 +1435,7 @@ function drawSettings(){
   b.appendChild(srow("Remember position in long songs",sw(S.posOn!==false),function(){S.posOn=(S.posOn===false);if(S.posOn===false)S.pos={};save();drawSettings()}));
   b.appendChild(srow("Playback log",null,openLog));
   b.appendChild(srow("Clear play history",null,function(){if(confirm("Clear Recently played and Most played?")){S.stats={};save();render();msg("Play history cleared.")}}));
-  hint("Songs longer than 10 minutes (DJ sets, audiobooks) pick up where you left off the next time you play them. Shuffle plays every song once before repeating; turn on Repeat all to keep going. Faster song changes preloads the next song, but on some iPhones it can make music stop when the screen is off, so it stays off unless you turn it on. If a call, alarm, or another app pauses your music, melodies. keeps trying to restart it for the time you choose. iPhone doesn't always allow this, and it can't tell a call apart from unplugged headphones.");
+  hint("Songs longer than 10 minutes (DJ sets, audiobooks) pick up where you left off the next time you play them. Shuffle plays every song once before repeating; turn on Repeat all to keep going. Faster song changes preloads the next song, but on some iPhones it can make music stop when the screen is off, so it stays off unless you turn it on. If a call, alarm, or another app pauses your music, melodies. keeps trying to restart it for the time you choose. iPhone doesn't always allow this, and it can't tell a call apart from unplugged headphones. Keep screen on while playing stops the screen from auto-locking while music plays, which uses more battery.");
   h("Library");
   var bytes=0;S.order.forEach(function(id){if(byId[id])bytes+=byId[id].blob.size});
   b.appendChild(srow("Songs",S.order.length+" · "+fsize(bytes)));
