@@ -124,6 +124,14 @@ li.hd{border:0;padding:16px 2px 2px;font-size:12px;letter-spacing:.08em;text-tra
 .abar .dg{color:#E5484D}
 .abar .cn{flex:none;padding:0 6px;font-size:13px;color:var(--sub)}
 .selmode main{padding-bottom:120px}
+.trh{font-size:13px;color:var(--sub);font-weight:600;margin:20px 0 4px}
+.trtl{position:relative;height:18px;border-radius:6px;background:var(--acc);overflow:hidden;margin:2px 0 14px;cursor:pointer}
+.trtl .c{position:absolute;top:0;bottom:0;background:var(--line)}
+.trtl .p{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#E5484D}
+.trtl .m{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:#F5A623}
+.crow{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.crow span{flex:1}
+.crow .pill{min-width:0;padding:8px 12px}
 .trow{display:flex;align-items:center;gap:6px;margin:6px 0 16px;flex-wrap:wrap}
 .trow b{width:100%;font-size:13px;color:var(--sub);font-weight:600}
 .trow .pill{min-width:0;padding:10px 12px}
@@ -203,7 +211,7 @@ body.selmode .mini{display:none}
   </div>
   <div class="pane-r">
   <div class="tabs">
-    <button data-t="lib">Library</button><button data-t="fav">Favorites</button><button data-t="pl">Playlists</button><button data-t="br">Browse</button><button data-t="q" id="tq">Queue</button>
+    <button data-t="lib">Library</button><button data-t="fav">Favorites</button><button data-t="pl">Playlists</button><button data-t="br">Browse</button>
   </div>
   <div class="acts" id="acts"><button class="add" id="addBtn">Add songs</button><button class="add" id="shufAll">Shuffle all</button></div>
   <button class="add" id="addPl" style="display:none">+ Add songs to this playlist</button>
@@ -306,6 +314,17 @@ function dbRename(id,name){try{if(!db)return;var s=db.transaction("files","readw
 function btn(c,t){var b=document.createElement("button");if(c)b.className=c;b.textContent=t;return b}
 function nm(id){return byId[id]?byId[id].name:""}
 function clean(n){return n.replace(/\.[^.]+$/,"").replace(/_+/g," ")}
+// "Artist - Title" file names -> {artist,title}; null when the name doesn't look like that
+function guessFromName(fn){
+  if(!fn)return null;
+  var b=String(fn).replace(/\.[^.\/\\]+$/,"").replace(/_+/g," ").replace(/\s+/g," ").trim();
+  b=b.replace(/^\d{1,3}\s*[-.)]\s+/,"").replace(/^0\d{1,2}\s+(?=.+\s[-\u2013\u2014]\s)/,"");
+  var m=b.match(/^(.+?)\s+[-\u2013\u2014]\s+(.+)$/);
+  if(!m)return null;
+  var a=m[1].trim(),t=m[2].trim();
+  if(!a||!t||a.length>60||/^\d+$/.test(a))return null;
+  return{artist:a,title:t};
+}
 function fmt(s){if(!isFinite(s))return"0:00";s=Math.floor(s);return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
 function plById(id){return S.lists.filter(function(l){return l.id===id})[0]}
 function isFav(id){return S.favs.indexOf(id)>-1}
@@ -330,7 +349,7 @@ function menu(id){
       sheet("Add to playlist",o)}}];
   it.push({l:"Rename",f:function(){renameTrack(id)}});
   it.push({l:"Edit info…",f:function(){openInfo(id)}});
-  it.push({l:S.trims[id]?"Edit trim…":"Trim silence…",f:function(){openTrim(id)}});
+  it.push({l:S.trims[id]?"Edit trim…":"Trim…",f:function(){openTrim(id)}});
   if(S.pos[id])it.push({l:"Play from the beginning",f:function(){delete S.pos[id];save();ctx=viewIds().slice();ctxPos=ctx.indexOf(id);setSrc(tab,openPl);if(shuffle)startShuffle(id);load(id)}});
   it.push({l:"Share or save file",f:function(){var t=byId[id];saveFile(t.blob,safeName(t.name)+"."+ext(t.blob.type))}});
   if(tab==="pl"&&openPl&&!isSmart())it.push({l:"Remove from this playlist",f:function(){var p=plById(openPl),before=p.ids.slice();p.ids.splice(p.ids.indexOf(id),1);save();render();offerUndo("Removed from playlist",function(){p.ids=before;save();render()})}});
@@ -374,24 +393,22 @@ function viewIds(){
   var ids;
   if(tab==="lib")ids=S.order;
   else if(tab==="fav")ids=S.order.filter(isFav);
-  else if(tab==="q")return queue;
   else{var p=curList();ids=p?p.ids:[]}
   var q=$("srch").value.trim().toLowerCase();
   if(tab==="lib"||tab==="fav")ids=sortedIds(ids);
   return q?ids.filter(function(i){return hay(i).indexOf(q)>-1}):ids;
 }
-var EMPTY={lib:"Add some MP3 files to start listening.",fav:"Tap the heart on a song to keep it here.",q:"Nothing queued. Use ⋯ on a song to play it next.",pl:"Create a playlist to group your songs.",br:"Add songs with artist or album info to browse them here.",plo:"No songs yet. Tap Add songs above to pick some.",sm:"Play some songs and they'll show up here."};
+var EMPTY={lib:"Add some MP3 files to start listening.",fav:"Tap the heart on a song to keep it here.",pl:"Create a playlist to group your songs.",br:"Add songs with artist or album info to browse them here.",plo:"No songs yet. Tap Add songs above to pick some.",sm:"Play some songs and they'll show up here."};
 
 function render(){
   var ul=$("list");ul.innerHTML="";
   var sk=tab+"|"+openPl;if(sk!==selKey){selKey=sk;selMode=false;sel={}}
   Array.prototype.forEach.call(document.querySelectorAll(".tabs button"),function(b){b.classList.toggle("on",b.dataset.t===tab)});
-  $("tq").textContent="Queue"+(queue.length?" "+queue.length:"");
   var overview=(tab==="pl"||tab==="br")&&!openPl,searching=$("srch").value.trim()!=="";
   $("acts").style.display=tab==="lib"?"flex":"none";
   $("addPl").style.display=(tab==="pl"&&openPl&&!isSmart())?"block":"none";
   $("sortBtn").style.display=(tab==="lib"||tab==="fav")?"":"none";$("sortBtn").textContent=({manual:"Sort",name:"Name",artist:"Artist",added:"Newest"})[S.sort||"manual"]||"Sort";
-  $("sbar").style.display=(tab==="q"||overview)?"none":"flex";
+  $("sbar").style.display=overview?"none":"flex";
   $("selBtn").textContent=selMode?"Done":"Select";document.body.classList.toggle("selmode",selMode);
   var bar=$("bar");bar.innerHTML="";bar.style.display="none";
   var n=0;
@@ -433,26 +450,16 @@ function render(){
       bar.appendChild(bk);bar.appendChild(ti);bar.appendChild(sh);bar.appendChild(pl);
       if(tab==="pl"&&p&&!isSmart()){var mo=btn("pill","⋯");mo.style.minWidth="0";mo.setAttribute("aria-label","Playlist options");mo.onclick=function(){plMenu(p)};bar.appendChild(mo)}
     }
-    if(tab==="q"&&queue.length){
-      bar.style.display="flex";
-      var qt=document.createElement("b");qt.textContent=queue.length+" up next";
-      var qc=btn("pill","Clear");qc.onclick=function(){var qb=queue.slice();queue=[];render();offerUndo("Queue cleared",function(){queue=qb;render()})};
-      var qs=btn("pill","Save as playlist");qs.onclick=saveQueue;
-      bar.appendChild(qt);bar.appendChild(qc);bar.appendChild(qs);
-    }
     var drag=!searching&&tab!=="fav"&&!selMode&&!(tab==="lib"&&(S.sort||"manual")!=="manual")&&!isSmart();
     viewIds().forEach(function(id){
       if(!byId[id])return;
       var li=document.createElement("li");li.dataset.id=id;if(id===cur)li.className="cur";
       if(drag){var h=document.createElement("span");h.className="h";h.textContent="≡";li.appendChild(h)}
       li.appendChild(thumbEl(byId[id]));var b=trackBtn(id);b.onclick=function(){playFromView(id,li)};li.appendChild(b);
-      if(selMode&&tab!=="q"){
+      if(selMode){
         var ck=document.createElement("span");ck.className="ck"+(sel[id]?" on":"");ck.textContent=sel[id]?"✓":"";
         li.insertBefore(ck,li.firstChild);
         b.onclick=function(){if(sel[id])delete sel[id];else sel[id]=1;ck.className="ck"+(sel[id]?" on":"");ck.textContent=sel[id]?"✓":"";updSel()};
-      }else if(tab==="q"){
-        var x=btn("x","✕");x.setAttribute("aria-label","Remove from queue");
-        x.onclick=function(){queue.splice(Array.prototype.indexOf.call(ul.children,li),1);render()};li.appendChild(x);
       }else{
         var hb=btn("hb","");hb.innerHTML=I.heart;hb.setAttribute("aria-label","Favorite");if(isFav(id))hb.classList.add("fv");
         hb.onclick=function(){toggleFav(id)};
@@ -518,7 +525,6 @@ function load(id){
   S.last={id:id,t:0};S.shuf=shuffle&&shufQ.length?{q:shufQ,p:shufPos}:null;save();meta();if(document.hidden)needRender=true;else render();
 }
 function playFromView(id,li){
-  if(tab==="q"){var i=Array.prototype.indexOf.call($("list").children,li);queue.splice(i,1);load(id);return}
   ctx=viewIds().slice();ctxPos=ctx.indexOf(id);setSrc(tab,openPl);if(shuffle)startShuffle(id);load(id);
 }
 function go(dir){var lt=lastLoad;go0(dir);if(lastLoad===lt)lg("go("+dir+"): nothing to play (end of list)")}
@@ -592,6 +598,14 @@ function hTime(){
 function guard(a,f){return function(){if(a===audio)f()}}
 function bindAudio(a){a.onplay=guard(a,hPlay);a.onpause=guard(a,hPause);a.onended=guard(a,hEnded);a.onloadedmetadata=guard(a,hMeta);a.ontimeupdate=guard(a,hTime);a.onseeked=guard(a,posState);a.onratechange=guard(a,posState);a.onerror=guard(a,function(){lg("audio error code="+(a.error?a.error.code:"?"))});a.onstalled=guard(a,function(){lg("stalled")});a.onwaiting=guard(a,function(){lg("waiting (buffering)")})}
 bindAudio(audioA);bindAudio(audioB);
+// skip any sections cut out of the middle of the current song
+function cutSkip(){
+  var tr_=cur!=null&&S.trims[cur],cs=tr_&&tr_[2];
+  if(!cs||audio.paused||seeking)return;
+  var c=audio.currentTime,lead=0.04*(audio.playbackRate||1),i;
+  for(i=0;i<cs.length;i++){if(c>=cs[i][0]-lead&&c<cs[i][1]-0.01){audio.currentTime=cs[i][1];return}}
+}
+setInterval(cutSkip,80);
 $("seek").oninput=function(){seeking=true;if(audio.duration)audio.currentTime=audio.duration*$("seek").value/1000};
 $("seek").onchange=function(){seeking=false};
 document.addEventListener("visibilitychange",function(){if(document.hidden)savePos(true)});
@@ -690,12 +704,23 @@ async function scanTags(force){
     for(k=0;k<ids.length;k++){
       t=byId[ids[k]];if(!t)continue;
       tg=await readTags(t.blob);art=tg.cover?await thumb(tg.cover):null;
-      t.title=tg.title||null;t.artist=tg.artist||null;t.album=tg.album||null;t.track=tg.track||null;t.art=art;t.scanned=true;t.au=null;
+      var gg=(!tg.artist&&S.fnArtist!==false)?guessFromName(t.orig):null;t.title=tg.title||null;t.artist=tg.artist||(gg?gg.artist:null);t.album=tg.album||null;t.track=tg.track||null;t.art=art;t.scanned=true;t.au=null;
       dbPatch(t.id,{title:t.title,artist:t.artist,album:t.album,track:t.track,art:art,scanned:true});
       n++;if(n%8===0)render();
     }
   }catch(e){}
   scanning=false;if(n){render();meta()}
+}
+function detectArtists(){
+  var ch=[];S.order.forEach(function(i){var t=byId[i];if(!t||t.edited||t.artist)return;var g=guessFromName(t.orig);if(g)ch.push([t,g])});
+  if(!ch.length){msg("No file names with an “Artist - Title” pattern found.");return}
+  if(!confirm("Fill in the artist for "+ch.length+(ch.length===1?" song":" songs")+" from their file names? Song names that still match the file name will drop the artist part."))return;
+  ch.forEach(function(x){
+    var t=x[0],g=x[1],o={artist:g.artist};t.artist=g.artist;
+    if(t.orig&&t.name===clean(t.orig)){t.name=g.title;dbRename(t.id,g.title)}
+    dbPatch(t.id,o);
+  });
+  save();render();meta();drawSettings();msg("Updated "+ch.length+(ch.length===1?" song.":" songs."));
 }
 function renameFromTags(){
   var ids=S.order.filter(function(i){var t=byId[i];return t&&t.title&&t.title!==t.name});
@@ -771,12 +796,6 @@ $("sortBtn").onclick=function(){
   var o=[["manual","Manual order (drag to reorder)"],["name","Name A–Z"],["artist","Artist A–Z"],["added","Recently added"]];
   sheet("Sort by",o.map(function(x){return{l:x[1]+((S.sort||"manual")===x[0]?"  ✓":""),f:function(){S.sort=x[0];save();render()}}}));
 };
-function saveQueue(){
-  var ids=[];queue.forEach(function(i){if(byId[i]&&ids.indexOf(i)<0)ids.push(i)});
-  if(!ids.length)return;
-  var n=prompt("Playlist name","Queue "+dstamp());if(!n||!n.trim())return;
-  S.lists.push({id:"p"+Date.now(),name:n.trim(),ids:ids});save();toast("Saved “"+n.trim()+"”");
-}
 var uo=null,pendUnused=0;
 function offerUndo(text,undo,expire){
   closeUndo(true);
@@ -1065,14 +1084,15 @@ async function doAdd(fs,force){
       return;
     }
   }
-  var k,f,id,tg,art,nmv,failed=0,added=0;toast("Adding "+fs.length+(fs.length===1?" song…":" songs…"));
+  var k,f,id,tg,art,nmv,gn,ar,failed=0,added=0;toast("Adding "+fs.length+(fs.length===1?" song…":" songs…"));
   for(k=0;k<fs.length;k++){
     f=fs[k];tg=await readTags(f);art=tg.cover?await thumb(tg.cover):null;
-    nmv=(S.tagNames!==false&&tg.title)?tg.title:clean(f.name);
-    id=await dbAdd({added:Date.now()+k,name:nmv,blob:f,type:f.type,orig:f.name,title:tg.title||null,artist:tg.artist||null,album:tg.album||null,track:tg.track||null,art:art,scanned:true});
+    gn=(!tg.artist&&S.fnArtist!==false)?guessFromName(f.name):null;ar=tg.artist||(gn?gn.artist:null);
+    nmv=(S.tagNames!==false&&tg.title)?tg.title:(gn?gn.title:clean(f.name));
+    id=await dbAdd({added:Date.now()+k,name:nmv,blob:f,type:f.type,orig:f.name,title:tg.title||null,artist:ar,album:tg.album||null,track:tg.track||null,art:art,scanned:true});
     if(id==null&&db){failed++;continue}
     if(id==null)id=Date.now()+k;
-    byId[id]={id:id,added:Date.now()+k,name:nmv,blob:f,orig:f.name,title:tg.title||null,artist:tg.artist||null,album:tg.album||null,track:tg.track||null,art:art,scanned:true};S.order.push(id);added++;
+    byId[id]={id:id,added:Date.now()+k,name:nmv,blob:f,orig:f.name,title:tg.title||null,artist:ar,album:tg.album||null,track:tg.track||null,art:art,scanned:true};S.order.push(id);added++;
   }
   save();render();
   if(failed)sheet(failed+(failed===1?" song":" songs")+" couldn't be saved. Your device may be out of storage space.",[{l:"OK",f:function(){}}]);
@@ -1137,7 +1157,7 @@ function selRemove(){
 }
 $("selBtn").onclick=function(){selMode=!selMode;sel={};render()};
 
-// trim silence (playback only; the file itself is never changed)
+// trim a song: start, end, and sections in the middle (playback only; the file itself is never changed)
 //SILSTART
 function detectSilence(chs,rate,thr){
   var len=chs[0].length,win=Math.max(1,Math.floor(rate*0.01)),a=-1,b=-1,i,c,m,v,w;
@@ -1150,37 +1170,141 @@ function detectSilence(chs,rate,thr){
 //SILEND
 var tr={};
 function r2(x){return Math.round(x*100)/100}
-function clampTrim(){
-  if(!tr.dur)return;var mx=Math.max(0,tr.dur-1);
+function tfmt(x){x=Math.max(0,x||0);var m=Math.floor(x/60),q=x-m*60;return m+":"+(q<10?"0":"")+q.toFixed(1)}
+// tidy the trim: clamp the start/end, drop or merge cut sections, turn cuts that touch an edge into start/end trims
+function fixTrim(){
+  var d=tr.dur;tr.s=Math.max(0,r2(tr.s));tr.e=Math.max(0,r2(tr.e));
+  if(!d)return;
+  var mx=Math.max(0,d-1);
   if(tr.s+tr.e>mx){tr.e=Math.max(0,r2(mx-tr.s));if(tr.s+tr.e>mx)tr.s=Math.max(0,r2(mx-tr.e))}
+  var lo=tr.s,hi=d-tr.e,cs=[];
+  tr.cuts.slice().sort(function(x,y){return x[0]-y[0]}).forEach(function(c){
+    var a=Math.max(lo,c[0]),b=Math.min(hi,c[1]),L=cs[cs.length-1];
+    if(b-a<0.05)return;
+    if(L&&a<=L[1])L[1]=Math.max(L[1],r2(b));else cs.push([r2(a),r2(b)]);
+  });
+  if(cs.length&&cs[0][0]<=lo+0.05){tr.s=r2(cs[0][1]);cs.shift()}
+  if(cs.length&&cs[cs.length-1][1]>=hi-0.05){tr.e=r2(d-cs[cs.length-1][0]);cs.pop()}
+  tr.cuts=cs;
 }
-function stopHear(){if(tr.pv){tr.pv.pause();tr.pv=null}clearInterval(tr.pt)}
-function hear(end){
-  stopHear();var a=new Audio(tr.url);tr.pv=a;
-  a.onloadedmetadata=function(){
-    var d=a.duration||tr.dur,from=end?Math.max(0,d-tr.e-4):tr.s,to=end?d-tr.e:tr.s+4;
-    a.currentTime=from;a.play().catch(function(){});
-    tr.pt=setInterval(function(){if(a.currentTime>=to||a.ended)stopHear()},100);
-  };
+function keptLen(){var k=(tr.dur||0)-tr.s-tr.e;tr.cuts.forEach(function(c){k-=c[1]-c[0]});return k}
+function trPos(){return tr.a?(tr.a.currentTime||0):0}
+function trSeek(t){if(!tr.a||!tr.dur)return;tr.a.currentTime=Math.max(0,Math.min(tr.dur,t));updTrim()}
+function trStop(){if(tr.a)tr.a.pause();tr.mode=null;tr.stopAt=0;updTrim()}
+// mode "preview" plays the result (skipping every cut); otherwise plays the raw file so you can find your spots
+function trPlay(mode,from,limit){
+  var a=tr.a;if(!a)return;
+  tr.mode=mode==="preview"?"preview":null;tr.stopAt=limit?Date.now()+limit:0;
+  if(from!=null)a.currentTime=from;
+  var p=a.play();if(p&&p.catch)p.catch(function(){});updTrim();
 }
-function drawTrim(){
-  var b=$("trBody");b.innerHTML="";
-  function row(label,key){
-    var d=document.createElement("div");d.className="trow";
-    var t=document.createElement("b");t.textContent=label;d.appendChild(t);
-    function st(l,dv){var x=btn("pill",l);x.onclick=function(){tr[key]=Math.max(0,r2(tr[key]+dv));clampTrim();drawTrim()};d.appendChild(x)}
-    st("−1",-1);st("−.1",-.1);
-    var v=document.createElement("span");v.className="tv";v.textContent=tr[key].toFixed(2)+" s";d.appendChild(v);
-    st("+.1",.1);st("+1",1);b.appendChild(d);
+function trTick(){
+  var a=tr.a;if(!a)return;
+  var d=tr.dur||a.duration||0,c=a.currentTime||0,i,cs=tr.cuts,lead=0.04*(a.playbackRate||1);
+  if(tr.mode&&!a.paused){
+    if(c<tr.s-0.02)a.currentTime=tr.s;
+    else if(d&&tr.e>0&&c>=d-tr.e)trStop();
+    else for(i=0;i<cs.length;i++){if(c>=cs[i][0]-lead&&c<cs[i][1]-0.01){a.currentTime=cs[i][1];break}}
+    if(tr.stopAt&&Date.now()>=tr.stopAt)trStop();
   }
-  row("Cut from the start","s");row("Cut from the end","e");
+  updTrim();
+}
+function updTrim(){
+  var u=tr.ui;if(!u||!u.play)return;
+  var a=tr.a,d=tr.dur||0,p=a?(a.currentTime||0):0,on=a&&!a.paused;
+  u.play.textContent=on?"⏸":"▶";
+  u.time.textContent=d?tfmt(p)+" / "+tfmt(d):"Loading…";
+  if(d){u.scrub.max=d;if(!tr.drag)u.scrub.value=p}
+  if(u.ph&&d)u.ph.style.left=(p/d*100)+"%";
+  u.pv.textContent=(tr.mode&&on)?"Stop preview":"Preview the result";
+}
+function drawTl(){
+  var t=tr.ui.tl,d=tr.dur;t.innerHTML="";tr.ui.ph=null;if(!d)return;
+  function seg(a,b,c){var x=document.createElement("span");x.className=c;x.style.left=(a/d*100)+"%";x.style.width=((b-a)/d*100)+"%";t.appendChild(x)}
+  if(tr.s>0)seg(0,tr.s,"c");
+  if(tr.e>0)seg(d-tr.e,d,"c");
+  tr.cuts.forEach(function(c){seg(c[0],c[1],"c")});
+  if(tr.mark!=null){var m=document.createElement("span");m.className="m";m.style.left=(tr.mark/d*100)+"%";t.appendChild(m)}
+  var ph=document.createElement("span");ph.className="p";t.appendChild(ph);tr.ui.ph=ph;
+}
+function drawCuts(){
+  var box=tr.ui.cuts;box.innerHTML="";
+  tr.cuts.forEach(function(c,k){
+    var r=document.createElement("div");r.className="crow";
+    var l=document.createElement("span");l.textContent=tfmt(c[0])+" → "+tfmt(c[1])+"  ("+r2(c[1]-c[0]).toFixed(1)+" s)";r.appendChild(l);
+    var h=btn("pill","Hear");h.onclick=function(){trPlay("preview",Math.max(tr.s,c[0]-3),7000)};r.appendChild(h);
+    var x=btn("pill","✕");x.setAttribute("aria-label","Remove this cut");x.onclick=function(){tr.cuts.splice(k,1);chg()};r.appendChild(x);
+    box.appendChild(r);
+  });
+}
+function updVals(){
+  var u=tr.ui,d=tr.dur;
+  u.sv.textContent=tr.s.toFixed(2)+" s";u.ev.textContent=tr.e.toFixed(2)+" s";
+  u.kept.textContent=d?"Result: "+tfmt(keptLen())+" of "+tfmt(d):"";
+  u.mk.textContent=tr.mark==null?"Start a cut here":"End the cut here";
+  u.mkx.style.display=tr.mark==null?"none":"";
+  u.mkHint.textContent=tr.mark==null?"Move to where the part you want gone begins, then tap Start a cut here.":"Cut starts at "+tfmt(tr.mark)+". Move to where it ends, then tap End the cut here.";
+}
+function chg(){if(!tr.ui)return;fixTrim();drawTl();drawCuts();updVals();updTrim()}
+function addCut(a,b){
+  if(!tr.dur)return;
+  if(b<a){var q=a;a=b;b=q}
+  if(b-a<0.1){toast("Pick two different spots");return}
+  var s0=tr.s,e0=tr.e,c0=tr.cuts.map(function(c){return[c[0],c[1]]});
+  tr.cuts.push([a,b]);fixTrim();
+  if(keptLen()<1){tr.s=s0;tr.e=e0;tr.cuts=c0;toast("That would leave less than a second");return}
+}
+function buildTrim(){
+  var b=$("trBody"),u=tr.ui={};b.innerHTML="";
+  function div(c){var d=document.createElement("div");if(c)d.className=c;return d}
+  function sec(t){var h=div("trh");h.textContent=t;b.appendChild(h)}
+  // player
+  var pr=div("trow");pr.style.marginBottom="0";
+  u.play=btn("pill","▶");u.play.style.minWidth="56px";u.play.setAttribute("aria-label","Play or pause");
+  u.play.onclick=function(){if(tr.a&&!tr.a.paused)trStop();else trPlay("raw")};
+  u.time=document.createElement("span");u.time.className="tv";u.time.style.fontSize="15px";
+  pr.appendChild(u.play);pr.appendChild(u.time);b.appendChild(pr);
+  u.scrub=document.createElement("input");u.scrub.type="range";u.scrub.min=0;u.scrub.max=1;u.scrub.step="any";u.scrub.value=0;u.scrub.setAttribute("aria-label","Position in the song");
+  u.scrub.oninput=function(){tr.drag=true;trSeek(+u.scrub.value)};
+  u.scrub.onchange=function(){tr.drag=false};
+  b.appendChild(u.scrub);
+  u.tl=div("trtl");u.tl.onclick=function(ev){var r=u.tl.getBoundingClientRect();if(r.width)trSeek((ev.clientX-r.left)/r.width*tr.dur)};b.appendChild(u.tl);
+  var st=div("trow");st.style.marginTop="0";
+  [["−1 s",-1],["−.1",-.1],["+.1",.1],["+1 s",1]].forEach(function(x){var p=btn("pill",x[0]);p.onclick=function(){trSeek(trPos()+x[1])};st.appendChild(p)});
+  b.appendChild(st);
+  // start / end
+  sec("Cut the start or the end");
+  var r1=div("trow");
+  var c1=btn("pill","Cut before here");c1.onclick=function(){var p=trPos();if(p<0.05){toast("Move forward first");return}if(tr.dur-p-tr.e<1){toast("That would leave less than a second");return}tr.s=r2(p);chg()};
+  var c2=btn("pill","Cut after here");c2.onclick=function(){var p=trPos();if(tr.dur-p<0.05){toast("Move back first");return}if(p-tr.s<1){toast("That would leave less than a second");return}tr.e=r2(tr.dur-p);chg()};
+  r1.appendChild(c1);r1.appendChild(c2);b.appendChild(r1);
+  function row(label,key,ref){
+    var d=div("trow");var t=document.createElement("b");t.textContent=label;d.appendChild(t);
+    function stp(l,dv){var x=btn("pill",l);x.onclick=function(){tr[key]=Math.max(0,r2(tr[key]+dv));chg()};d.appendChild(x)}
+    stp("−1",-1);stp("−.1",-.1);
+    var v=document.createElement("span");v.className="tv";d.appendChild(v);u[ref]=v;
+    stp("+.1",.1);stp("+1",1);b.appendChild(d);
+  }
+  row("Cut from the start","s","sv");row("Cut from the end","e","ev");
+  // sections
+  sec("Cut out a section");
+  u.mkHint=document.createElement("p");u.mkHint.className="hint";u.mkHint.style.margin="0 0 8px";b.appendChild(u.mkHint);
+  var mr=div("trow");mr.style.marginBottom="6px";
+  u.mk=btn("pill","Start a cut here");u.mk.onclick=function(){
+    var p=trPos();
+    if(tr.mark==null){tr.mark=p}else{var m=tr.mark;tr.mark=null;addCut(m,p)}
+    chg();
+  };
+  u.mkx=btn("pill","Cancel");u.mkx.onclick=function(){tr.mark=null;chg()};
+  mr.appendChild(u.mk);mr.appendChild(u.mkx);b.appendChild(mr);
+  u.cuts=div();b.appendChild(u.cuts);
+  // tools
+  sec("Tools");
   var au=btn("add","Auto-detect silence");au.onclick=autoTrim;b.appendChild(au);
-  var p=document.createElement("div");p.className="trow";
-  var p1=btn("pill","Hear start");p1.onclick=function(){hear(false)};
-  var p2=btn("pill","Hear end");p2.onclick=function(){hear(true)};
-  p.appendChild(p1);p.appendChild(p2);b.appendChild(p);
+  u.pv=btn("add","Preview the result");u.pv.onclick=function(){if(tr.mode&&tr.a&&!tr.a.paused)trStop();else trPlay("preview",tr.s)};b.appendChild(u.pv);
+  u.kept=document.createElement("p");u.kept.className="hint";u.kept.style.textAlign="center";b.appendChild(u.kept);
   var sv=btn("add","Save trim");sv.onclick=saveTrim;b.appendChild(sv);
-  var rs=btn("add","Reset (no trim)");rs.onclick=function(){tr.s=0;tr.e=0;drawTrim()};b.appendChild(rs);
+  var rs=btn("add","Reset (no trim)");rs.onclick=function(){tr.s=0;tr.e=0;tr.cuts=[];tr.mark=null;chg()};b.appendChild(rs);
 }
 async function autoTrim(){
   var t=byId[tr.id],id=tr.id;
@@ -1193,22 +1317,31 @@ async function autoTrim(){
     var r=detectSilence(chs,buf.sampleRate,0.01);try{ac.close()}catch(e){}
     if(tr.id!==id)return;
     if(!r){$("trMsg").textContent="This track looks completely silent.";return}
-    tr.dur=r.dur;tr.s=r2(Math.max(0,r.start-0.05));tr.e=r2(Math.max(0,r.end-0.1));clampTrim();
+    tr.dur=r.dur;tr.s=r2(Math.max(0,r.start-0.05));tr.e=r2(Math.max(0,r.end-0.1));
     $("trMsg").textContent="Found "+r.start.toFixed(1)+" s of silence at the start and "+r.end.toFixed(1)+" s at the end. Adjust if you like, then save.";
-    drawTrim();
+    chg();
   }catch(e){$("trMsg").textContent="Couldn't analyze this file. You can still set the times by hand."}
 }
 function openTrim(id){
-  var t=byId[id];if(!t)return;pauseNow();stopHear();
-  var c=S.trims[id]||[0,0];tr={id:id,s:c[0],e:c[1],dur:0,url:URL.createObjectURL(t.blob)};
-  $("trT").textContent=t.name;$("trMsg").textContent="Cuts apply during playback only. Your original file isn't changed.";
-  $("trim").classList.add("show");drawTrim();
-  var a=new Audio();a.preload="metadata";a.onloadedmetadata=function(){if(tr.id===id){tr.dur=a.duration;drawTrim()}};a.src=tr.url;
+  var t=byId[id];if(!t)return;pauseNow();
+  var c=S.trims[id]||[0,0];
+  tr={id:id,s:c[0],e:c[1],cuts:(c[2]||[]).map(function(x){return[x[0],x[1]]}),dur:0,mark:null,mode:null,url:URL.createObjectURL(t.blob)};
+  $("trT").textContent=t.name;$("trMsg").textContent="Play the song, pause where you want to cut, and use the buttons below. Cuts apply during playback only. Your original file isn't changed.";
+  $("trim").classList.add("show");buildTrim();
+  var a=new Audio();a.preload="auto";tr.a=a;
+  a.onloadedmetadata=function(){if(tr.id===id){tr.dur=a.duration;chg()}};
+  a.onplay=a.onpause=a.onended=function(){if(tr.id===id){if(a.ended)tr.mode=null;updTrim()}};
+  a.src=tr.url;tr.t=setInterval(trTick,50);chg();
 }
-function closeTrim(){stopHear();if(tr.url)URL.revokeObjectURL(tr.url);tr={};$("trim").classList.remove("show")}
+function closeTrim(){
+  clearInterval(tr.t);
+  if(tr.a){try{tr.a.pause();tr.a.removeAttribute("src");tr.a.load()}catch(e){}}
+  if(tr.url)URL.revokeObjectURL(tr.url);tr={};$("trim").classList.remove("show");
+}
 function saveTrim(){
-  var id=tr.id,s=tr.s;
-  if(tr.s<0.01&&tr.e<0.01){delete S.trims[id];toast("Trim removed")}else{S.trims[id]=[tr.s,tr.e];toast("Trim saved")}
+  var id=tr.id,s;fixTrim();s=tr.s;
+  if(tr.s<0.01&&tr.e<0.01&&!tr.cuts.length){delete S.trims[id];toast("Trim removed")}
+  else{var v=[tr.s,tr.e];if(tr.cuts.length)v.push(tr.cuts);S.trims[id]=v;toast("Trim saved")}
   save();if(cur===id&&audio.currentTime<s)audio.currentTime=s;closeTrim();
 }
 $("trX").onclick=closeTrim;
@@ -1449,8 +1582,11 @@ function drawSettings(){
   b.appendChild(srow("Use song info for names",sw(S.tagNames!==false),function(){S.tagNames=(S.tagNames===false);save();drawSettings()}));
   var nTag=S.order.filter(function(i){var t=byId[i];return t&&t.title&&t.title!==t.name}).length;
   b.appendChild(srow("Rename songs from their info",nTag?nTag+" can change":"Up to date",nTag?renameFromTags:null));
+  b.appendChild(srow("Guess artist from file name",sw(S.fnArtist!==false),function(){S.fnArtist=(S.fnArtist===false);save();drawSettings()}));
+  var nArt=S.order.filter(function(i){var t=byId[i];return t&&!t.edited&&!t.artist&&guessFromName(t.orig)}).length;
+  b.appendChild(srow("Detect artists from file names",nArt?nArt+" can be filled":"Up to date",nArt?detectArtists:null));
   b.appendChild(srow("Rescan song info",null,function(){scanTags(true);toast("Scanning…")}));
-  hint("Titles, artists, and album art are read from the tags inside your MP3 files. The first option uses a song's title tag as its name when you add it.");
+  hint("Titles, artists, and album art are read from the tags inside your MP3 files. The first option uses a song's title tag as its name when you add it. When a song has no artist tag, melodies. can read the artist from a file name like “Artist - Title.mp3”.");
   var pe=srow("Ask browser to protect my library","…",function(){
     try{navigator.storage.persist().then(function(ok){toast(ok?"Library protected":"The browser said no");drawSettings()})}catch(e){toast("Not supported here")}
   });
@@ -1478,7 +1614,7 @@ $("sdone").onclick=function(){$("set").classList.remove("show")};
 $("rfile").onchange=function(e){var f=e.target.files[0];e.target.value="";if(f)restore(f)};
 $("ifile").onchange=function(e){var f=e.target.files[0];e.target.value="";if(f)importLists(f)};
 
-// drag to reorder (Library, Queue, open playlist)
+// drag to reorder (Library, open playlist)
 $("list").onpointerdown=function(e){
   var h=e.target.closest&&e.target.closest(".h");if(!h)return;
   var ul=this,li=h.parentNode;e.preventDefault();li.classList.add("drag");
@@ -1494,7 +1630,7 @@ $("list").onpointerdown=function(e){
     document.removeEventListener("pointercancel",up);document.removeEventListener("touchmove",tm);
     li.classList.remove("drag");
     var ids=Array.prototype.map.call(ul.children,function(x){return byId[x.dataset.id].id});
-    if(tab==="lib")S.order=ids;else if(tab==="q")queue=ids;else if(openPl)plById(openPl).ids=ids;
+    if(tab==="lib")S.order=ids;else if(openPl)plById(openPl).ids=ids;
     save();
   }
   document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up);
